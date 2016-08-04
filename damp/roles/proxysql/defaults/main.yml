@@ -1,0 +1,19 @@
+proxysql:
+    interface: 0.0.0.0
+    admin_host: 127.0.0.1
+    admin_port: 6032
+    admin_user: admin
+    admin_passwd: admin
+    app_user: app
+    app_passwd: gempa
+    app_port: 6033
+    app_priv: '*.*:ALL,GRANT'
+    app_host: '%'
+    monitor_user: monitor
+    monitor_passwd: monitor
+    monitor_priv: '*.*:ALL'
+    monitor_host: '%'
+    app_max_conn: 200
+mysql:
+    login_user: root
+    login_passwd: mysecretpass

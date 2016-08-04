@@ -1,0 +1,5 @@
+---
+- hosts: proxysql
+  connection: local
+  roles:
+  - { role: proxysql }

@@ -1,0 +1,26 @@
+- name: load proxysql changes to runtime
+  command: >
+    mysql
+    --user={{ proxysql.admin_user }}
+    --password={{ proxysql.admin_passwd }}
+    --host={{ proxysql.admin_host }}
+    --port={{ proxysql.admin_port }}
+    --execute "
+    LOAD MYSQL SERVERS TO RUNTIME;	 
+    LOAD MYSQL USERS TO RUNTIME; 
+    LOAD ADMIN VARIABLES TO RUNTIME; 
+    LOAD MYSQL VARIABLES TO RUNTIME;"
+
+- name: save proxysql changes to disk
+  command: >
+    mysql
+    --user={{ proxysql.admin_user }}
+    --password={{ proxysql.admin_passwd }}
+    --host={{ proxysql.admin_host }}
+    --port={{ proxysql.admin_port }}
+    --execute "
+    SAVE MYSQL QUERY RULES TO DISK;
+    SAVE MYSQL SERVERS TO DISK;
+    SAVE MYSQL USERS TO DISK;
+    SAVE ADMIN VARIABLES TO DISK;"
+    

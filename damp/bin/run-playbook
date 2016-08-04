@@ -1,0 +1,1 @@
+ansible-playbook -vvv -i hostfile setup.yml --limit localhost

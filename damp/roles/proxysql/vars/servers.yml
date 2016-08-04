@@ -1,0 +1,3 @@
+mysql_servers:
+   damp_server1: 172.17.0.2
+   damp_server2: 172.17.0.3
