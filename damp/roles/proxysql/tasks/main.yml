@@ -76,6 +76,22 @@
     - save proxysql changes to disk
   tags: debug
 
+- name: add servers to proxysql and load them
+  command: >
+    mysql 
+    --user={{ proxysql.admin_user }}
+    --password={{ proxysql.admin_passwd }}
+    --host={{ proxysql.admin_host }}  
+    --port={{ proxysql.admin_port }}  
+    --execute "
+    INSERT INTO mysql_replication_hostgroups 
+    VALUES 
+        (1,2);"
+  notify:   
+    - load proxysql changes to runtime
+    - save proxysql changes to disk
+  tags: debug
+
 #create app user on the master
 - name: workaround for bug https://github.com/sysown/proxysql/issues/617 
   command: >
@@ -88,7 +104,7 @@
     REPLACE INTO 
         mysql_users (username, password, active, default_hostgroup, max_connections) 
     VALUES 
-        ('{{ proxysql.app_user }}', '{{ proxysql.app_passwd }}', 1, 0, {{ proxysql.app_max_conn }});"
+        ('{{ proxysql.app_user }}', '{{ proxysql.app_passwd }}', 1, 1, {{ proxysql.app_max_conn }});"
   notify:
     - load proxysql changes to runtime
     - save proxysql changes to disk
