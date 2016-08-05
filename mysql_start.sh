@@ -4,7 +4,7 @@ currdir=`pwd`
 servers="$currdir/damp/roles/proxysql/vars/servers.yml"
 #server1 will be the initial master
 
-num_of_servers=2
+num_of_servers=3
 server_name=damp_server
 
 list=$(docker ps -a |grep ${server_name})
@@ -22,14 +22,10 @@ docker-ip() {
 #create n slaves based on the slave directory template
 echo "mysql_servers:" > $servers
 
+echo "starting the following containers:"
 for i in $(seq 1  $num_of_servers)
 do
-echo $i
     mkdir -p $currdir/mysql_hosts/${server_name}${i}/conf.d $currdir/mysql_hosts/${server_name}${i}/log_mysql
-    #cp -r $currdir/mysql_hosts/server_tmpl/ $currdir/mysql_hosts/${server_name}${i}
-echo " $currdir/mysql_hosts/${server_name}${i}/conf.d/my.cnf"
-echo $currdir/my.cnf
-echo "s/server-id=/server-id=${i}/"
     if [ $i ==  "1" ] 
     then
         sed   -e "s/server-id=/server-id=1/" -e "s/read_only=1/read_only=0/"  $currdir/my.cnf> $currdir/mysql_hosts/${server_name}${i}/conf.d/my.cnf
