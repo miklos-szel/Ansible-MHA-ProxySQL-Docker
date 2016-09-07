@@ -56,7 +56,9 @@ mysql_servers:
 ```
 
 ## start the Docker and install/setup ProxySQL (1.2.2)  
+```
 ./ansible_start.sh
+```
 
 connect to the new cluster(outside or inside the docker) as an 'app' (mysql-client -> ProxySQL -> MySQL instanes)
 ```
@@ -97,7 +99,7 @@ mysql> select * from runtime_mysql_replication_hostgroups;
 +------------------+------------------+------------------------+
 2 rows in set (0.00 sec)
 ```
-App user (default hostgroup is 1, the traffic will go there unless told otherwise:
+App user (default hostgroup is 1, the traffic will go there unless told otherwise):
 ```
 mysql> select * from mysql_users;
 +----------+----------+--------+---------+-------------------+----------------+---------------+------------------------+--------------+---------+----------+-----------------+
