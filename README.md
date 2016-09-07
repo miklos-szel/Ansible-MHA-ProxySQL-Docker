@@ -6,9 +6,13 @@ brew cask install docker
 #this will install the server binaries as well, there is no cask for the client only 
 brew install mysql 
 
-docker pull percona
 docker build -t damp . 
-./mysql_start.sh
+#let's create a cluster of 3 machines (1 master -> 2 slaves)
+./mysql_start.sh zaphod 3
+
+#let's create a cluster of 2 machines (1 master -> 1 slaves)
+./mysql_start.sh arthurdent 2
+
 ./ansible_start.sh
 
 #connect to the new cluster as an 'app' (mysql-client -> ProxySQL -> MySQL instanes)
