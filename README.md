@@ -71,8 +71,16 @@ or
 Some notes:
 - the /etc/proxysql.cnf file left intact intentionally to avoid confusion, the ProxySQL only read it during the first start (when it create the sqlite database) - you can read more here https://github.com/sysown/proxysql/blob/master/doc/configuration_system.md
 - Every request the 'app' user executes goes to the hostgroup=1 which is the first cluster (fow now)
-
-
+- in case of an error message:
+```
+~/Projects/Docker/Docker-Anisble-ProxySQL-MHA$ ./ansible_start.sh
+docker: Error response from daemon: Conflict. The name "/damp_proxysql" is already in use by container d481f132fe47012759de349402eb4a162e7d95649a9b1b030769ef5a868bb461. You have to remove (or rename) that container to be able to reuse that name..
+```
+run
+```
+docker stop damp_proxysql
+docker rm damp_proxysql
+```
 
 List of MySQL servers:
 ```
