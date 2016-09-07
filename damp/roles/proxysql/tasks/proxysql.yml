@@ -1,6 +1,6 @@
 ---
 - include_vars: servers.yml
-
+  tags: gempa42
 - apt: >
     deb=https://github.com/sysown/proxysql/releases/download/v1.2.2/proxysql_1.2.2-ubuntu14_amd64.deb
 
@@ -14,28 +14,10 @@
 - service: >
     name=proxysql
     state=running
-#put sleep here!!!
-- wait_for: seconds=5 
 
-#- name: workaround for bug https://github.com/sysown/proxysql/issues/617 
-#  command: >
-#    mysql 
-#    --user={{ proxysql.admin_user }}
-#    --password={{ proxysql.admin_passwd }}
-#    --host={{ proxysql.admin_host }}  
-#    --port={{ proxysql.admin_port }}  
-#    --execute "LOAD MYSQL USERS FROM CONFIG;LOAD MYSQL SERVERS FROM CONFIG;LOAD MYSQL QUERY RULES FROM CONFIG;LOAD MYSQL VARIABLES FROM CONFIG;LOAD MYSQL USERS TO RUNTIME;LOAD MYSQL SERVERS TO RUNTIME; LOAD MYSQL QUERY RULES TO RUNTIME; LOAD MYSQL VARIABLES TO RUNTIME; "
+- wait_for: host={{ proxysql.admin_host }} port={{ proxysql.admin_port }}  delay=3 state=started 
 
-#- name: workaround for bug https://github.com/sysown/proxysql/issues/617 
-#  command: >
- #   mysql 
-#    --user={{ proxysql.admin_user }}
-#    --password={{ proxysql.admin_passwd }}
-#    --host={{ proxysql.admin_host }}  
-#    --port={{ proxysql.admin_port }}  
-#    --execute "set admin-mysql_ifaces='0.0.0.0:6032;/tmp/proxysql_admin.sock'; LOAD ADMIN VARIABLES TO RUNTIME;"
-
-#create app user on the mysql master
+#create app user on the mysql masters
 - mysql_user: >
     login_host={{ item.1 }}
     login_user={{ mysql.login_user }} 
@@ -48,9 +30,8 @@
   with_subelements:
     - "{{ mysql_servers }}"
     - master
-  tags: debug
 
-#create monitor user on the mysql master
+#create monitor user on the mysql masters
 - mysql_user: >
     login_host={{ item.1 }}
     login_user={{ mysql.login_user }} 
@@ -63,7 +44,6 @@
   with_subelements:
     - "{{ mysql_servers }}"
     - master
-  tags: debug
 
 - name: create MySQL app user in ProxySQL
   command: >
@@ -81,7 +61,23 @@
     - load proxysql changes to runtime
     - save proxysql changes to disk
 
-- name: create initial mysql_replication_hostgroups 
+#- name: create initial mysql_replication_hostgroups 
+#  command: >
+#    mysql 
+#    --user={{ proxysql.admin_user }}
+#    --password={{ proxysql.admin_passwd }}
+#    --host={{ proxysql.admin_host }}  
+#    --port={{ proxysql.admin_port }}  
+#    --execute "
+#    REPLACE INTO mysql_replication_hostgroups 
+#        ( writer_hostgroup, reader_hostgroup )
+#    VALUES 
+#        (1,2),(3,4),(5,6),(7,8),(8,9),(10,11);"
+#  notify:   
+#    - load proxysql changes to runtime
+#    - save proxysql changes to disk
+
+- name: add servers to proxysql and load them
   command: >
     mysql 
     --user={{ proxysql.admin_user }}
@@ -89,14 +85,18 @@
     --host={{ proxysql.admin_host }}  
     --port={{ proxysql.admin_port }}  
     --execute "
-    REPLACE INTO mysql_replication_hostgroups 
-        ( writer_hostgroup, reader_hostgroup )
+    REPLACE INTO mysql_replication_hostgroups
+        ( writer_hostgroup, reader_hostgroup, comment ) 
     VALUES 
-        (1,2),(3,4),(5,6),(7,8),(8,9),(10,11);"
+        ( {{ item.0.hostgroup }}, {{ item.0.hostgroup | int + 1  }}, '{{ item.0.clustername }}' );"
+  with_subelements:
+    - "{{ mysql_servers }}"
+    - master
+  tags:
+    - gempa42
   notify:   
     - load proxysql changes to runtime
     - save proxysql changes to disk
-  tags: debug3
 
 - name: add servers to proxysql and load them
   command: >
@@ -116,8 +116,6 @@
   notify:   
     - load proxysql changes to runtime
     - save proxysql changes to disk
-  tags: debug
 
 
 - debug: var=mysql_servers
-  tags: debug
