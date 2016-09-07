@@ -6,7 +6,6 @@ Teaching them to play together
 Prerequisities
  - Docker
  - Bash
- - MySQL client (optional)
 
 Docker: 
 ```
@@ -14,11 +13,6 @@ brew cask install docker
 ```
 (you have to open docker from the applications and follow the steps, if you can execute 'docker ps' from a terminal, you are all set)
 
-optional: install a mysql client (you can use any other client or connector)
-(this will install the server binaries as well, there is no cask for the client only)
-```
-brew install mysql
-```
 
 ## Build the docker image
 ```
@@ -60,14 +54,20 @@ mysql_servers:
 ./ansible_start.sh
 ```
 
-connect to the new cluster(outside or inside the docker) as an 'app' (mysql-client -> ProxySQL -> MySQL instanes)
+connect to the ProxySQL admin interface:
 ```
-mysql -h 127.0.0.1 -u app  -pgempa -P 6033
+docker exec -it damp_proxysql mysql -h 127.0.0.1 -u admin  -padmin -P 6032
+or
+./proxysql_admin.sh
 ```
-connect to the ProxySQL admin interface
+
+connect to the MySQL cluster as an 'app' (mysql-client -> ProxySQL -> MySQL instanes)
 ```
-mysql -h 127.0.0.1 -u admin  -padmin -P 6032
+docker exec -it damp_proxysql mysql -h 127.0.0.1 -u app  -pgempa -P 6033
+or
+./proxysql_app.sh
 ```
+
 Some notes:
 - the /etc/proxysql.cnf file left intact intentionally to avoid confusion, the ProxySQL only read it during the first start (when it create the sqlite database) - you can read more here https://github.com/sysown/proxysql/blob/master/doc/configuration_system.md
 - Every request the 'app' user executes goes to the hostgroup=1 which is the first cluster (fow now)
@@ -113,3 +113,8 @@ mysql> select * from mysql_users;
 ###TODO:
 - add MHA(in progress)
 - add databases and some test scenarios
+
+Thanks
+- René Cannaò 
+- Derek Downey 
+
