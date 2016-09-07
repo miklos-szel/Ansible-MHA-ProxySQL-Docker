@@ -20,3 +20,9 @@ mysql -h 127.0.0.1 -u app  -pgempa -P 6033
 
 #connect to the ProxySQL admin interface
 mysql -h 127.0.0.1 -u admin  -padmin -P 6032
+
+
+TODO:
+- add MHA
+- add test databases and some scenarios
+
