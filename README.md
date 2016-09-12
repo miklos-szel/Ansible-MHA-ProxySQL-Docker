@@ -1,4 +1,4 @@
-Docker-Anisble-Proxysql-MHA[DAMP]
+Docker-Anisble-MHA-ProxySQL[DAMP]
 ============================================================
 Teaching them to play together
 
