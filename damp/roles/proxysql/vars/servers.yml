@@ -1,17 +1,1 @@
 mysql_servers:
-  - clustername: damp_server_bas
-    hostgroup: 1
-    master:
-        - 172.17.0.2
-    servers:    
-      - 172.17.0.2
-      - 172.17.0.3
-      - 172.17.0.4
-  - clustername: damp_server_abs
-    hostgroup: 3
-    master:
-        - 172.17.0.5
-    servers:    
-      - 172.17.0.5
-      - 172.17.0.6
-      - 172.17.0.7
