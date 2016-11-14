@@ -6,6 +6,7 @@ proxysql:
     admin_passwd: admin
     app_user: app
     app_passwd: gempa
+    app_default_hostgroup: 1
     app_port: 6033
     app_priv: '*.*:ALL,GRANT'
     app_host: '%'
