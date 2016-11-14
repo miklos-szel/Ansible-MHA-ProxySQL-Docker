@@ -1,6 +1,5 @@
 ---
 - include_vars: servers.yml
-  tags: gempa42
 - apt: >
     deb=https://github.com/sysown/proxysql/releases/download/v1.2.2/proxysql_1.2.2-ubuntu14_amd64.deb
 
@@ -45,77 +44,46 @@
     - "{{ mysql_servers }}"
     - master
 
-- name: create MySQL app user in ProxySQL
-  command: >
-    mysql 
-    --user={{ proxysql.admin_user }}
-    --password={{ proxysql.admin_passwd }}
-    --host={{ proxysql.admin_host }}  
-    --port={{ proxysql.admin_port }}  
-    --execute "
-    REPLACE INTO 
-        mysql_users (username, password, active, default_hostgroup, max_connections) 
-    VALUES 
-        ('{{ proxysql.app_user }}', '{{ proxysql.app_passwd }}', 1, 1, {{ proxysql.app_max_conn }});"
-  notify:
-    - load proxysql changes to runtime
-    - save proxysql changes to disk
+- name: proxysql | config | add users
+  proxysql_mysql_users:
+    login_host:         "{{ proxysql.admin_host }}"
+    login_port:         "{{ proxysql.admin_port }}"
+    login_user:         "{{ proxysql.admin_user }}"
+    login_password:     "{{ proxysql.admin_passwd }}"
+    username:           "{{ proxysql.app_user }}"
+    password:           "{{ proxysql.app_passwd }}"
+    max_connections:    "{{ proxysql.app_max_conn }}"
+    default_hostgroup:  "{{ proxysql.app_default_hostgroup }}"
+    state: present
+        
 
-#- name: create initial mysql_replication_hostgroups 
-#  command: >
-#    mysql 
-#    --user={{ proxysql.admin_user }}
-#    --password={{ proxysql.admin_passwd }}
-#    --host={{ proxysql.admin_host }}  
-#    --port={{ proxysql.admin_port }}  
-#    --execute "
-#    REPLACE INTO mysql_replication_hostgroups 
-#        ( writer_hostgroup, reader_hostgroup )
-#    VALUES 
-#        (1,2),(3,4),(5,6),(7,8),(8,9),(10,11);"
-#  notify:   
-#    - load proxysql changes to runtime
-#    - save proxysql changes to disk
-
-- name: add servers to proxysql and load them
-  command: >
-    mysql 
-    --user={{ proxysql.admin_user }}
-    --password={{ proxysql.admin_passwd }}
-    --host={{ proxysql.admin_host }}  
-    --port={{ proxysql.admin_port }}  
-    --execute "
-    REPLACE INTO mysql_replication_hostgroups
-        ( writer_hostgroup, reader_hostgroup, comment ) 
-    VALUES 
-        ( {{ item.0.hostgroup }}, {{ item.0.hostgroup | int + 1  }}, '{{ item.0.clustername }}' );"
+- name: proxysql | config | add replication hostgroups
+  proxysql_replication_hostgroups:
+    login_host:         "{{ proxysql.admin_host }}"
+    login_port:         "{{ proxysql.admin_port }}"
+    login_user:         "{{ proxysql.admin_user }}"
+    login_password:     "{{ proxysql.admin_passwd }}"
+    writer_hostgroup:   "{{ item.0.hostgroup }}"
+    reader_hostgroup:   "{{ item.0.hostgroup | int + 1  }}"
+    comment:            "{{ item.0.clustername }}"
+    load_to_runtime:    True
+    state: present
   with_subelements:
     - "{{ mysql_servers }}"
     - master
-  tags:
-    - gempa42
-  notify:   
-    - load proxysql changes to runtime
-    - save proxysql changes to disk
 
-- name: add servers to proxysql and load them
-  command: >
-    mysql 
-    --user={{ proxysql.admin_user }}
-    --password={{ proxysql.admin_passwd }}
-    --host={{ proxysql.admin_host }}  
-    --port={{ proxysql.admin_port }}  
-    --execute "
-    REPLACE INTO mysql_servers 
-        ( hostgroup_id, hostname, port, max_replication_lag) 
-    VALUES 
-        ({{ item.0.hostgroup }}, '{{ item.1 }}', 3306, 20);"
+- name: proxysql | config | add server
+  proxysql_backend_servers:
+    login_host:     "{{ proxysql.admin_host }}"
+    login_port:     "{{ proxysql.admin_port }}"
+    login_user:     "{{ proxysql.admin_user }}"
+    login_password: "{{ proxysql.admin_passwd }}"
+    hostname:       "{{ item.1 }}"
+    hostgroup_id:   "{{ item.0.hostgroup }}"     
+    port:           "3306"
+    load_to_runtime: True
+    state:           present
   with_subelements:
     - "{{ mysql_servers }}"
     - servers
-  notify:   
-    - load proxysql changes to runtime
-    - save proxysql changes to disk
 
-
-- debug: var=mysql_servers
