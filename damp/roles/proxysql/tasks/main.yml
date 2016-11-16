@@ -1,5 +1,94 @@
 ---
-- include_vars: servers.yml
+- apt: >
+    deb=https://github.com/sysown/proxysql/releases/download/v1.3.0g/proxysql_1.3.0g-ubuntu14_amd64.deb
 
-- include: proxysql.yml
+- template: >
+    src=proxysql.conf.tmpl
+    dest=/etc/proxysql.cnf
 
+- service: >
+    name=proxysql
+    state=running
+
+- wait_for: host={{ proxysql.admin_host }} port={{ proxysql.admin_port }}  delay=3 state=started 
+
+- name: proxysql | config | add users
+  proxysql_mysql_users:
+    login_host:         "{{ proxysql.admin_host }}"
+    login_port:         "{{ proxysql.admin_port }}"
+    login_user:         "{{ proxysql.admin_user }}"
+    login_password:     "{{ proxysql.admin_passwd }}"
+    username:           "{{ proxysql.app_user }}"
+    password:           "{{ proxysql.app_passwd }}"
+    max_connections:    "{{ proxysql.app_max_conn }}"
+    default_hostgroup:  "{{ proxysql.app_default_hostgroup }}"
+    state: present
+
+#create app user on the mysql masters
+- mysql_user: >
+    login_host={{ hostvars[item]['inventory_hostname'] }}
+    login_user={{ mysql.login_user }} 
+    login_password={{ mysql.login_passwd }}
+    name={{ proxysql.app_user }}
+    password={{ proxysql.app_passwd }}  
+    priv={{ proxysql.app_priv }}
+    host={{ proxysql.app_host }}
+    state=present
+  when: hostvars[item]['mysql_role']  == "master" 
+  with_inventory_hostnames: all:!proxysql
+
+
+#create monitor user on the mysql masters
+- mysql_user: >
+    login_host={{ hostvars[item]['inventory_hostname'] }}
+    login_user={{ mysql.login_user }} 
+    login_password={{ mysql.login_passwd }}
+    name={{ proxysql.monitor_user }}
+    password={{ proxysql.monitor_passwd }}  
+    priv={{ proxysql.monitor_priv }}
+    host={{ proxysql.monitor_host }}
+    state=present
+  when: hostvars[item]['mysql_role']  == "master" 
+  with_inventory_hostnames: all:!proxysql
+
+- name: proxysql | config | add replication hostgroups
+  proxysql_replication_hostgroups:
+    login_host:         "{{ proxysql.admin_host }}"
+    login_port:         "{{ proxysql.admin_port }}"
+    login_user:         "{{ proxysql.admin_user }}"
+    login_password:     "{{ proxysql.admin_passwd }}"
+    writer_hostgroup:   "{{ hostvars[item]['hostgroup'] }}"
+    reader_hostgroup:   "{{ hostvars[item]['hostgroup'] | int + 1  }}"
+    comment:            "{{ hostvars[item]['cluster'] }}"
+    load_to_runtime:    True
+    state: present
+  when: hostvars[item]['mysql_role']  == "master"
+  with_inventory_hostnames: all:!proxysql
+
+
+- name: proxysql | config | add server
+  proxysql_backend_servers:
+    login_host:     "{{ proxysql.admin_host }}"
+    login_port:     "{{ proxysql.admin_port }}"
+    login_user:     "{{ proxysql.admin_user }}"
+    login_password: "{{ proxysql.admin_passwd }}"
+    hostname:       "{{ hostvars[item]['inventory_hostname']  }}"
+    hostgroup_id:   "{{ hostvars[item]['hostgroup'] }}"     
+    comment:        "{{ hostvars[item]['cluster'] }}"     
+    port:           "3306"
+    load_to_runtime: False 
+    state:           present
+  with_inventory_hostnames: all:!proxysql
+  register: servers
+
+- name: proxysql | config | load servers to runtime
+  proxysql_manage_config:
+    login_host:     "{{ proxysql.admin_host }}"
+    login_port:     "{{ proxysql.admin_port }}"
+    login_user:     "{{ proxysql.admin_user }}"
+    login_password: "{{ proxysql.admin_passwd }}"
+    action: LOAD
+    config_settings: "MYSQL SERVERS"
+    direction: TO
+    config_layer: RUNTIME
+  when: servers.changed
