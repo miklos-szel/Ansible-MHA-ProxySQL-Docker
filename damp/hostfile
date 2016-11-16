@@ -1,11 +1,2 @@
-[proxysql]
-localhost
-
-
-[damp_server_mukk]
-172.17.0.2 mysql_role=master
-172.17.0.3 mysql_role=slave
-[damp_server_mukk:vars]
-cluster=damp_server_mukk
-hostgroup=1
+#placeholder file, mysql_create_cluster.sh will generate this
 
