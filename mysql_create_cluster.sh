@@ -101,9 +101,9 @@ do
         echo "$item mysql_role=slave" >>$servers
     fi
 done
-echo -e "[${server_name}:vars]
+echo -e "\n[${server_name}:vars]
 cluster=${server_name}
 hostgroup=$hostgroup
-" >>$servers 
+\n" >>$servers 
 
 

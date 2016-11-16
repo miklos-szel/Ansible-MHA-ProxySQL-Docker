@@ -39,13 +39,16 @@ localhost
 172.17.0.2 mysql_role=master
 172.17.0.3 mysql_role=slave
 172.17.0.4 mysql_role=slave
+
 [damp_server_zaphod:vars]
 cluster=damp_server_zaphod
 hostgroup=1
 
+
 [damp_server_arthurdent]
 172.17.0.5 mysql_role=master
 172.17.0.6 mysql_role=slave
+
 [damp_server_arthurdent:vars]
 cluster=damp_server_arthurdent
 hostgroup=3
@@ -58,14 +61,27 @@ hostgroup=3
 
 connect to the ProxySQL admin interface:
 ```
-docker exec -it damp_proxysql mysql -h 127.0.0.1 -u admin  -padmin -P 6032
-or
 ./proxysql_admin.sh
+```
+You can also use any MySQL compatible client:
+```
+host: 127.0.0.1
+user: admin
+passwd: admin
+port: 6032
+
 ```
 
 connect to the MySQL cluster as an 'app' (mysql-client -> ProxySQL -> MySQL instanes)
 ```
 ./proxysql_app.sh
+```
+You can also use any MySQL compatible client:
+```
+host: 127.0.0.1
+user: app
+passwd: gempa
+port: 6033
 ```
 
 Run the following to reset the env and restart the test from scratch
