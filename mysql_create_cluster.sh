@@ -1,7 +1,8 @@
 #!/bin/bash
 #brew install gnu-sed
 currdir=`pwd`
-servers="$currdir/damp/roles/proxysql/vars/servers.yml"
+servers="$currdir/damp/hostfile"
+touch $servers
 #server1 will be the initial master
 
 numargs=$#
@@ -16,6 +17,7 @@ last_hostgroup=$(grep "hostgroup" $servers |tail -n 1 |cut -d":" -f 2 |sed 's/ /
 if [[ -z "$last_hostgroup" ]]
     then
         hostgroup=1
+        echo -e "[proxysql]\nlocalhost\n\n" >>$servers
     else 
         hostgroup=$(( $last_hostgroup + 2 ))   
 fi 
@@ -89,15 +91,19 @@ do
 done
 
 #update the ansible yml file with this cluster's data
-echo -e "  - clustername: ${server_name}
-    hostgroup: $hostgroup
-    master:
-        - $master_ip
-    servers:    ">>$servers
-
+echo -e "[${server_name}]" >>$servers
 for item in ${serverlist[*]}
 do
-    echo "      - $item" >>$servers
+    if [ "$item" == "$master_ip" ] 
+    then
+        echo "$item mysql_role=master" >>$servers
+    else
+        echo "$item mysql_role=slave" >>$servers
+    fi
 done
+echo -e "[${server_name}:vars]
+cluster=${server_name}
+hostgroup=$hostgroup
+" >>$servers 
 
 

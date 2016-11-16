@@ -1,4 +1,2 @@
-#ROLES
-======
-[proxysql]
-localhost
+#placeholder file, mysql_create_cluster.sh will generate this
+

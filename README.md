@@ -22,34 +22,36 @@ docker build -t damp .
 ## Create some MySQL test clusters
 cluster of 3 machines (1 master -> 2 slaves)
 ```
-./mysql_start.sh zaphod 3
+./mysql_create_cluster.sh zaphod 3
 ```
 
 cluster of 2 machines (1 master -> 1 slaves)
 ```
-./mysql_start.sh arthurdent 2
+./mysql_create_cluster.sh arthurdent 2
 ```
-The script generates the damp/roles/proxysql/vars/servers.yml file that will be parsed by ansible during the next step.
+The script generates the damp/hostfile Ansible inventory file.
 ```
-mysql_servers:
-  - clustername: damp_server_zaphod
-    hostgroup: 1
-    master:
-        - 172.17.0.2
-    servers:
-      - 172.17.0.2
-      - 172.17.0.3
-      - 172.17.0.4
-  - clustername: damp_server_arthurdent
-    hostgroup: 3
-    master:
-        - 172.17.0.5
-    servers:
-      - 172.17.0.5
-      - 172.17.0.6
+[proxysql]
+localhost
+
+
+[damp_server_zaphod]
+172.17.0.2 mysql_role=master
+172.17.0.3 mysql_role=slave
+172.17.0.4 mysql_role=slave
+[damp_server_zaphod:vars]
+cluster=damp_server_zaphod
+hostgroup=1
+
+[damp_server_arthurdent]
+172.17.0.5 mysql_role=master
+172.17.0.6 mysql_role=slave
+[damp_server_arthurdent:vars]
+cluster=damp_server_arthurdent
+hostgroup=3
 ```
 
-## start the Docker and install/setup ProxySQL (1.2.2)  
+## start the Docker and install/setup ProxySQL (1.3.0g)  
 ```
 ./ansible_start.sh
 ```
@@ -63,24 +65,19 @@ or
 
 connect to the MySQL cluster as an 'app' (mysql-client -> ProxySQL -> MySQL instanes)
 ```
-docker exec -it damp_proxysql mysql -h 127.0.0.1 -u app  -pgempa -P 6033
-or
 ./proxysql_app.sh
 ```
 
+Run the following to reset the env and restart the test from scratch
+(this removes every MySQL containers(*damp_server*) and the inventory file)
+```
+./dump_reset.sh
+```
+
+
 Some notes:
 - the /etc/proxysql.cnf file left intact intentionally to avoid confusion, the ProxySQL only read it during the first start (when it create the sqlite database) - you can read more here https://github.com/sysown/proxysql/blob/master/doc/configuration_system.md
-- Every request the 'app' user executes goes to the hostgroup=1 which is the first cluster (fow now)
-- in case of an error message:
-```
-~/Projects/Docker/Docker-Anisble-ProxySQL-MHA$ ./ansible_start.sh
-docker: Error response from daemon: Conflict. The name "/damp_proxysql" is already in use by container d481f132fe47012759de349402eb4a162e7d95649a9b1b030769ef5a868bb461. You have to remove (or rename) that container to be able to reuse that name..
-```
-run
-```
-docker stop damp_proxysql
-docker rm damp_proxysql
-```
+- Every request the 'app' user executes goes to the hostgroup=1 which is the first cluster (for now)
 
 List of MySQL servers:
 ```

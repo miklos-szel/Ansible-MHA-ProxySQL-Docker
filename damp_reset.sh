@@ -1,6 +1,6 @@
 #!/bin/bash
 currdir=`pwd`
-servers="$currdir/damp/roles/proxysql/vars/servers.yml"
+servers="$currdir/damp/hostfile"
 server_name=damp_server
 list=$(docker ps -a |grep ${server_name})
 if [[ "$list" != "" ]]
@@ -13,5 +13,7 @@ docker ps -a |grep ${server_name}
 else
 echo "no $server_name containers are running"
 fi
+docker stop damp_proxysql
+docker rm damp_proxysql
 
-echo "mysql_servers:">$servers
+rm -f $servers
