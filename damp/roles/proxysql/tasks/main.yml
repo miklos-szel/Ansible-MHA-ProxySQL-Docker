@@ -24,8 +24,8 @@
     default_hostgroup:  "{{ proxysql.app_default_hostgroup }}"
     state: present
 
-#create app user on the mysql masters
-- mysql_user: >
+- name: create app user on the mysql master
+  mysql_user: >
     login_host={{ hostvars[item]['inventory_hostname'] }}
     login_user={{ mysql.login_user }} 
     login_password={{ mysql.login_passwd }}
@@ -38,8 +38,8 @@
   with_inventory_hostnames: all:!proxysql
 
 
-#create monitor user on the mysql masters
-- mysql_user: >
+- name: Create monitor user on the mysql masters 
+  mysql_user: >
     login_host={{ hostvars[item]['inventory_hostname'] }}
     login_user={{ mysql.login_user }} 
     login_password={{ mysql.login_passwd }}
@@ -64,6 +64,15 @@
     state: present
   when: hostvars[item]['mysql_role']  == "master"
   with_inventory_hostnames: all:!proxysql
+
+- name: Workaround - ProxySQL monitor runs DMLs on mysql_servers, disabling it while adding the servers
+  shell: >
+      mysql 
+      --user={{ proxysql.admin_user }}
+      --password={{ proxysql.admin_passwd }}
+      --host={{ proxysql.admin_host }}  
+      --port={{ proxysql.admin_port }}  
+      --execute "set mysql-monitor_enabled='false'; LOAD MYSQL VARIABLES TO RUNTIME;"
 
 
 - name: proxysql | config | add server
@@ -92,3 +101,14 @@
     direction: TO
     config_layer: RUNTIME
   when: servers.changed
+
+- name: Enable ProxySQL monitor  
+  shell: >
+      mysql 
+      --user={{ proxysql.admin_user }}
+      --password={{ proxysql.admin_passwd }}
+      --host={{ proxysql.admin_host }}  
+      --port={{ proxysql.admin_port }}  
+      --execute "
+      set mysql-monitor_enabled='true'; LOAD MYSQL VARIABLES TO RUNTIME;"
+
