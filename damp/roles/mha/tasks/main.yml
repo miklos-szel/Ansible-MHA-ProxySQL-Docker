@@ -1,0 +1,3 @@
+- include: mha_node.yml
+- include: mha_manager.yml
+- include: mha_config.yml

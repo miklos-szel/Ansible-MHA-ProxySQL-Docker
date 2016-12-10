@@ -1,0 +1,21 @@
+---
+- set_fact:
+    server_groups="{{ groups.keys()  | map('regex_search','damp.*') | select('string') | list }}"
+
+- file: >
+    path=/etc/mha/
+    owner=root group=root
+    mode=0700
+    state=directory
+
+- name: Generate MHA config file for cluster {{ item }} 
+  template: >
+    src=mha_cluster.j2 
+    dest=/etc/mha/mha_{{ item  }}.cnf
+    owner=root
+    group=root
+    mode=600
+  register: mha_conf_check
+  with_items:
+    - "{{ server_groups }}"
+
