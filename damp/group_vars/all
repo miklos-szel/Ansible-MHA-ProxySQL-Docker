@@ -18,3 +18,5 @@ proxysql:
 mysql:
     login_user: root
     login_passwd: mysecretpass
+    repl_user: repl
+    repl_passwd: slavepass
