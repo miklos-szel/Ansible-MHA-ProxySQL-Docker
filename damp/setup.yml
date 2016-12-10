@@ -3,3 +3,4 @@
   connection: local
   roles:
   - { role: proxysql }
+  - { role: mha }
