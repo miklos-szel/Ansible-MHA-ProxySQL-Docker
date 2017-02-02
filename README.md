@@ -202,7 +202,7 @@ re-run the sysbench and check the connection pool afterwards
 ```
 We can see that a lot of traffic went to the hostgroup 2 (readers)
 
-Check the query digest
+Check the query digest too:
 ```
 11) [stats] Show query digest
 +----+----------+------------+----------------------------------------------------------------------------------+
@@ -226,31 +226,6 @@ Check the query digest
 +----+----------+------------+----------------------------------------------------------------------------------+
 ```
 
-
-also check the query digest table
-```
-11) [stats] Show query digest
-+----+----------+------------+----------------------------------------------------------------------------------+
-| hg | sum_time | count_star | substr(digest_text,1,80)                                                         |
-+----+----------+------------+----------------------------------------------------------------------------------+
-| 1  | 21055026 | 68840      | SELECT c FROM sbtest1 WHERE id=?                                                 |
-| 2  | 12534808 | 56900      | SELECT c FROM sbtest1 WHERE id=?                                                 |
-| 1  | 10226315 | 6884       | SELECT DISTINCT c FROM sbtest1 WHERE id BETWEEN ? AND ?+? ORDER BY c             |
-| 1  | 5391754  | 6884       | SELECT c FROM sbtest1 WHERE id BETWEEN ? AND ?+? ORDER BY c                      |
-| 1  | 4179020  | 12574      | COMMIT                                                                           |
-| 1  | 3754569  | 6884       | SELECT SUM(K) FROM sbtest1 WHERE id BETWEEN ? AND ?+?                            |
-| 1  | 3214914  | 6884       | SELECT c FROM sbtest1 WHERE id BETWEEN ? AND ?+?                                 |
-| 1  | 2609316  | 12574      | BEGIN                                                                            |
-| 2  | 2170878  | 5690       | SELECT DISTINCT c FROM sbtest1 WHERE id BETWEEN ? AND ?+? ORDER BY c             |
-| 1  | 2111828  | 4          | INSERT INTO sbtest1(k, c, pad) VALUES(?, ?, ?),(?, ?, ?),(?, ?, ?),(?, ?, ?),(?, |
-| 2  | 1641139  | 5690       | SELECT c FROM sbtest1 WHERE id BETWEEN ? AND ?+? ORDER BY c                      |
-| 2  | 1618228  | 5690       | SELECT SUM(K) FROM sbtest1 WHERE id BETWEEN ? AND ?+?                            |
-| 2  | 1336262  | 5690       | SELECT c FROM sbtest1 WHERE id BETWEEN ? AND ?+?                                 |
-| 1  | 380320   | 1          | CREATE INDEX k_1 on sbtest1(k)                                                   |
-| 1  | 267295   | 1          | CREATE TABLE sbtest1 ( id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT, k INTEGER UN |
-+----+----------+------------+----------------------------------------------------------------------------------+
-
-```
 
 
 ###Example test scenario #2:
