@@ -69,7 +69,7 @@ proxysql_menu.sh
  3) MySQL Connect to 'arthurdent' via ProxySQL
  4) [runtime] Show servers
  5) [runtime] Show users
- 6) [runtime] Show repliation_hostgroups
+ 6) [runtime] Show replication_hostgroups
  7) [runtime] Show query_rules
  8) [runtime] Show global_variables
  9) [stats] Show connection_pool
@@ -250,7 +250,7 @@ check the serverlist:
 ```
 The current masters are the 172.17.0.3 and 172.17.0.6 (even hostgroups)
 ```
- 6) [runtime] Show repliation_hostgroups
+ 6) [runtime] Show replication_hostgroups
 +------------------+------------------+------------------------+
 | writer_hostgroup | reader_hostgroup | comment                |
 +------------------+------------------+------------------------+
@@ -306,7 +306,7 @@ otherwise everything was seamless.
 ```
 hostgroup 1 -> 172.17.0.4 (master)
 hostgroup 2 -> 172.17.0.3,172.17.0.5 (slave)
-ProxySQL detected the changes and reassigned the servers to the proper repliation_hostgroups
+ProxySQL detected the changes and reassigned the servers to the proper replication_hostgroups
 
 
 
@@ -371,7 +371,7 @@ Run the following to reset the env and restart the test from scratch
 ```
 
 notes:
-- the /etc/proxysql.cnf is confiured via a template, but be aware that the ProxySQL only read it during the first start (when it create the sqlite database) - you can read more here https://github.com/sysown/proxysql/blob/master/doc/configuration_system.md
+- the /etc/proxysql.cnf is configured via a template, but be aware that the ProxySQL only read it during the first start (when it create the sqlite database) - you can read more here https://github.com/sysown/proxysql/blob/master/doc/configuration_system.md
 - mha config files can be found under /etc/mha/mha_damp_server_${clustername}.cnf
 - ProxySQL log /var/lib/proxysql/proxysql.log
 
