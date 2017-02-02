@@ -1,11 +1,11 @@
-Docker-Anisble-MHA-ProxySQL[DAMP]
+Anisble-MHA-ProxySQL-Docker[DAMP]
 ============================================================
 Teaching them to play together
 
 ## Install
 Prerequisities
  - Docker
- - Bash
+ - GNU Bash
 
 Docker: 
 ```
@@ -22,12 +22,12 @@ docker build -t damp .
 ## Create some MySQL test clusters
 cluster of 3 machines (1 master -> 2 slaves)
 ```
-./mysql_create_cluster.sh zaphod 3
+./damp_create_cluster.sh zaphod 3
 ```
 
 cluster of 2 machines (1 master -> 1 slaves)
 ```
-./mysql_create_cluster.sh arthurdent 2
+./damp_create_cluster.sh arthurdent 2
 ```
 The script generates the damp/hostfile Ansible inventory file.
 ```
@@ -36,9 +36,9 @@ localhost
 
 
 [damp_server_zaphod]
-172.17.0.2 mysql_role=master
-172.17.0.3 mysql_role=slave
+172.17.0.3 mysql_role=master
 172.17.0.4 mysql_role=slave
+172.17.0.5 mysql_role=slave
 
 [damp_server_zaphod:vars]
 cluster=damp_server_zaphod
@@ -46,42 +46,268 @@ hostgroup=1
 
 
 [damp_server_arthurdent]
-172.17.0.5 mysql_role=master
-172.17.0.6 mysql_role=slave
+172.17.0.6 mysql_role=master
+172.17.0.7 mysql_role=slave
 
 [damp_server_arthurdent:vars]
 cluster=damp_server_arthurdent
 hostgroup=3
 ```
 
-## start the Docker and install/setup ProxySQL (1.3.0g)  
+    
+## start the Docker and install/setup ProxySQL(1.3.2)/MHA and sysbench  
 ```
-./ansible_start.sh
+./docker_start.sh
 ```
 
-connect to the ProxySQL admin interface:
+From inside the container run the following:
 ```
-./proxysql_admin.sh
+proxysql_menu.sh
+
+ 1) ProxySQL Admin Shell
+ 2) MySQL Connect to 'zaphod' via ProxySQL
+ 3) MySQL Connect to 'arthurdent' via ProxySQL
+ 4) [runtime] Show servers
+ 5) [runtime] Show users
+ 6) [runtime] Show repliation_hostgroups
+ 7) [runtime] Show query_rules
+ 8) [runtime] Show global_variables
+ 9) [stats] Show connection_pool
+10) [stats] Show command_counters
+11) [stats] Show query digest
+12) [stats] Show hostgroups
+13) [log] Show connect
+14) [log] Show ping
+15) [log] Show read_only
+16) [test][zaphod] sysbench prepare
+17) [test][zaphod] sysbench run - 15 sec, ro
+18) [test][zaphod] sysbench run - 60 sec, ro
+19) [test][zaphod] Split R/W
+20) [test][zaphod] Create 'world' sample db
+21) [HA][zaphod] MHA online failover (interactive)
+22) [HA][zaphod] MHA online failover (noninteractive)
+23) [test][arthurdent] sysbench prepare
+24) [test][arthurdent] sysbench run - 15 sec, ro
+25) [test][arthurdent] sysbench run - 60 sec, ro
+26) [test][arthurdent] Split R/W
+27) [test][arthurdent] Create 'world' sample db
+28) [HA][arthurdent] MHA online failover (interactive)
+29) [HA][arthurdent] MHA online failover (noninteractive)
+30) Quit
 ```
-You can also use any MySQL compatible client:
+
+This script can be also found outside of the container, but some options won't work from there (unless you have MHA/sysbench installed and set up:)).
+
+These menupoint are self explanatory shortcuts to Linux commands/sqls. All commands/queries will be printed before execution.
+
+Some expample outputs:
+
+4) [runtime] Show servers
+```
++----+------------+------+--------+--------+-----------------+------------------------+
+| hg | hostname   | port | status | weight | max_connections | comment                |
++----+------------+------+--------+--------+-----------------+------------------------+
+| 1  | 172.17.0.3 | 3306 | ONLINE | 1      | 1000            | damp_server_zaphod     |
+| 2  | 172.17.0.4 | 3306 | ONLINE | 1      | 1000            | damp_server_zaphod     |
+| 2  | 172.17.0.5 | 3306 | ONLINE | 1      | 1000            | damp_server_zaphod     |
+| 3  | 172.17.0.6 | 3306 | ONLINE | 1      | 1000            | damp_server_arthurdent |
+| 4  | 172.17.0.7 | 3306 | ONLINE | 1      | 1000            | damp_server_arthurdent |
++----+------------+------+--------+--------+-----------------+------------------------+
+5 rows in set (0.01 sec)
+```
+
+5) [runtime] Show users
+```
++----------+-------------------------------------------+----+--------+-----------------+
+| username | password                                  | hg | active | max_connections |
++----------+-------------------------------------------+----+--------+-----------------+
+| app1     | *98E485B64DC03E6D8B4831D58E813F86025D7268 | 1  | 1      | 200             |
+| app3     | *944C03A73AF6A147B01A747C5D4EF0FF4A714D2D | 3  | 1      | 200             |
+| app1     | *98E485B64DC03E6D8B4831D58E813F86025D7268 | 1  | 1      | 200             |
+| app3     | *944C03A73AF6A147B01A747C5D4EF0FF4A714D2D | 3  | 1      | 200             |
++----------+-------------------------------------------+----+--------+-----------------+
+```
+connect to the MySQL cluster as an 'app' (mysql-client -> ProxySQL -> MySQL instanes)
+The username and the password will be the following 
+```
+hostgroup=1
+username=app1
+password=app1
+
+hostgroup=3
+username=app3
+password=app3
+etc.
+
+host: 127.0.0.1
+user: app#
+passwd: app#
+port: 6033
+```
+
+
+ 6) [runtime] Show replication_hostgroups
+```
++------------------+------------------+------------------------+
+| writer_hostgroup | reader_hostgroup | comment                |
++------------------+------------------+------------------------+
+| 1                | 2                | damp_server_zaphod     |
+| 3                | 4                | damp_server_arthurdent |
++------------------+------------------+------------------------+
+```
+App user (default hostgroup is the hostgroup in the inventory file for a given cluster, the traffic will go there unless told otherwise):
+
+
+###Example test scenario #1:
+let's generate some traffic on the first cluster:
+execute these one after another
+```
+16) [test][zaphod] sysbench prepare
+17) [test][zaphod] sysbench run - 15 sec, ro
+```
+
+Then check the connection pool. We'll see that all traffic went to the master (reads and writes). By default ProxySQL sends all traffic to the writer_hostgroups
+```
+9) [stats] Show connection_pool
+
++-----------+------------+----------+--------+----------+----------+--------+---------+---------+-----------------+-----------------+------------+
+| hostgroup | srv_host   | srv_port | status | ConnUsed | ConnFree | ConnOK | ConnERR | Queries | Bytes_data_sent | Bytes_data_recv | Latency_ms |
++-----------+------------+----------+--------+----------+----------+--------+---------+---------+-----------------+-----------------+------------+
+| 1         | 172.17.0.3 | 3306     | ONLINE | 0        | 4        | 4      | 0       | 110150  | 6177839         | 264696684       | 175        |
+| 3         | 172.17.0.6 | 3306     | ONLINE | 0        | 0        | 0      | 0       | 0       | 0               | 0               | 222        |
+| 4         | 172.17.0.7 | 3306     | ONLINE | 0        | 0        | 0      | 0       | 0       | 0               | 0               | 279        |
+| 2         | 172.17.0.4 | 3306     | ONLINE | 0        | 0        | 0      | 0       | 0       | 0               | 0               | 238        |
+| 2         | 172.17.0.5 | 3306     | ONLINE | 0        | 0        | 0      | 0       | 0       | 0               | 0               | 159        |
++-----------+------------+----------+--------+----------+----------+--------+---------+---------+-----------------+-----------------+------------+
+```
+Tell ProxySQL to send all queries matching '^select' to the hostgroup 2 (readers)
+```
+19) [test][zaphod] Split R/W
+
+Command: mysql -h 127.0.0.1 -uadmin -padmin -P6032  -e 'REPLACE INTO mysql_query_rules(rule_id,active,match_pattern,destination_hostgroup,apply) VALUES(1000,1,'^select',2,0);LOAD MYSQL QUERY RULES TO RUNTIME;SAVE MYSQL QUERY RULES TO DISK;\G
+```
+re-run the sysbench and check the connection pool afterwards
+```
+17) [test][zaphod] sysbench run - 15 sec, ro
+9) [stats] Show connection_pool
++-----------+------------+----------+--------+----------+----------+--------+---------+---------+-----------------+-----------------+------------+
+| hostgroup | srv_host   | srv_port | status | ConnUsed | ConnFree | ConnOK | ConnERR | Queries | Bytes_data_sent | Bytes_data_recv | Latency_ms |
++-----------+------------+----------+--------+----------+----------+--------+---------+---------+-----------------+-----------------+------------+
+| 1         | 172.17.0.3 | 3306     | ONLINE | 0        | 4        | 4      | 0       | 121530  | 6240429         | 264696684       | 185        |
+| 3         | 172.17.0.6 | 3306     | ONLINE | 0        | 0        | 0      | 0       | 0       | 0               | 0               | 249        |
+| 4         | 172.17.0.7 | 3306     | ONLINE | 0        | 0        | 0      | 0       | 0       | 0               | 0               | 278        |
+| 2         | 172.17.0.4 | 3306     | ONLINE | 0        | 3        | 3      | 0       | 40173   | 1740087         | 110225431       | 271        |
+| 2         | 172.17.0.5 | 3306     | ONLINE | 0        | 3        | 3      | 0       | 39487   | 1708053         | 108560759       | 202        |
++-----------+------------+----------+--------+----------+----------+--------+---------+---------+-----------------+-----------------+------------+
+```
+We can see that a lot of traffic went to the hostgroup 2 (readers)
+
+Check the query digest
+```
+11) [stats] Show query digest
++----+----------+------------+----------------------------------------------------------------------------------+
+| hg | sum_time | count_star | substr(digest_text,1,80)                                                         |
++----+----------+------------+----------------------------------------------------------------------------------+
+| 1  | 21055026 | 68840      | SELECT c FROM sbtest1 WHERE id=?                                                 |
+| 2  | 12534808 | 56900      | SELECT c FROM sbtest1 WHERE id=?                                                 |
+| 1  | 10226315 | 6884       | SELECT DISTINCT c FROM sbtest1 WHERE id BETWEEN ? AND ?+? ORDER BY c             |
+| 1  | 5391754  | 6884       | SELECT c FROM sbtest1 WHERE id BETWEEN ? AND ?+? ORDER BY c                      |
+| 1  | 4179020  | 12574      | COMMIT                                                                           |
+| 1  | 3754569  | 6884       | SELECT SUM(K) FROM sbtest1 WHERE id BETWEEN ? AND ?+?                            |
+| 1  | 3214914  | 6884       | SELECT c FROM sbtest1 WHERE id BETWEEN ? AND ?+?                                 |
+| 1  | 2609316  | 12574      | BEGIN                                                                            |
+| 2  | 2170878  | 5690       | SELECT DISTINCT c FROM sbtest1 WHERE id BETWEEN ? AND ?+? ORDER BY c             |
+| 1  | 2111828  | 4          | INSERT INTO sbtest1(k, c, pad) VALUES(?, ?, ?),(?, ?, ?),(?, ?, ?),(?, ?, ?),(?, |
+| 2  | 1641139  | 5690       | SELECT c FROM sbtest1 WHERE id BETWEEN ? AND ?+? ORDER BY c                      |
+| 2  | 1618228  | 5690       | SELECT SUM(K) FROM sbtest1 WHERE id BETWEEN ? AND ?+?                            |
+| 2  | 1336262  | 5690       | SELECT c FROM sbtest1 WHERE id BETWEEN ? AND ?+?                                 |
+| 1  | 380320   | 1          | CREATE INDEX k_1 on sbtest1(k)                                                   |
+| 1  | 267295   | 1          | CREATE TABLE sbtest1 ( id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT, k INTEGER UN |
++----+----------+------------+----------------------------------------------------------------------------------+
+```
+
+
+also check the query digest table
+```
+11) [stats] Show query digest
++----+----------+------------+----------------------------------------------------------------------------------+
+| hg | sum_time | count_star | substr(digest_text,1,80)                                                         |
++----+----------+------------+----------------------------------------------------------------------------------+
+| 1  | 21055026 | 68840      | SELECT c FROM sbtest1 WHERE id=?                                                 |
+| 2  | 12534808 | 56900      | SELECT c FROM sbtest1 WHERE id=?                                                 |
+| 1  | 10226315 | 6884       | SELECT DISTINCT c FROM sbtest1 WHERE id BETWEEN ? AND ?+? ORDER BY c             |
+| 1  | 5391754  | 6884       | SELECT c FROM sbtest1 WHERE id BETWEEN ? AND ?+? ORDER BY c                      |
+| 1  | 4179020  | 12574      | COMMIT                                                                           |
+| 1  | 3754569  | 6884       | SELECT SUM(K) FROM sbtest1 WHERE id BETWEEN ? AND ?+?                            |
+| 1  | 3214914  | 6884       | SELECT c FROM sbtest1 WHERE id BETWEEN ? AND ?+?                                 |
+| 1  | 2609316  | 12574      | BEGIN                                                                            |
+| 2  | 2170878  | 5690       | SELECT DISTINCT c FROM sbtest1 WHERE id BETWEEN ? AND ?+? ORDER BY c             |
+| 1  | 2111828  | 4          | INSERT INTO sbtest1(k, c, pad) VALUES(?, ?, ?),(?, ?, ?),(?, ?, ?),(?, ?, ?),(?, |
+| 2  | 1641139  | 5690       | SELECT c FROM sbtest1 WHERE id BETWEEN ? AND ?+? ORDER BY c                      |
+| 2  | 1618228  | 5690       | SELECT SUM(K) FROM sbtest1 WHERE id BETWEEN ? AND ?+?                            |
+| 2  | 1336262  | 5690       | SELECT c FROM sbtest1 WHERE id BETWEEN ? AND ?+?                                 |
+| 1  | 380320   | 1          | CREATE INDEX k_1 on sbtest1(k)                                                   |
+| 1  | 267295   | 1          | CREATE TABLE sbtest1 ( id INTEGER UNSIGNED NOT NULL AUTO_INCREMENT, k INTEGER UN |
++----+----------+------------+----------------------------------------------------------------------------------+
+
+```
+
+
+
+
+
+
+
+
+####Edit the global configuration file if you want to change defaults, credentials.
+damp/group_vars/all
+the mysql sections shouldn't be modified 
+```
+proxysql:
+  admin:
+    host: 127.0.0.1
+    port: 6032
+    user: admin
+    passwd: admin
+    interface: 0.0.0.0
+  app:
+    user: app
+    passwd: gempa
+    default_hostgroup: 1
+    port: 6033
+    priv: '*.*:CREATE,DELETE,DROP,EXECUTE,INSERT,SELECT,UPDATE,INDEX'
+    host: '%'
+    max_conn: 200 
+  monitor:
+    user: monitor
+    passwd: monitor
+    priv: '*.*:USAGE,REPLICATION CLIENT'
+    host: '%'
+  global_variables:
+    mysql-default_query_timeout: 120000
+    mysql-max_allowed_packet: 67108864
+    mysql-monitor_read_only_timeout: 600
+    mysql-monitor_ping_timeout: 600
+    mysql-max_connections: 1024
+
+mysql:
+    login_user: root
+    login_passwd: mysecretpass
+    repl_user: repl
+    repl_passwd: slavepass
+```
+
+Connect  manually:
+ProxySQL admin interface (with any MySQL compatible client)
 ```
 host: 127.0.0.1
 user: admin
 passwd: admin
 port: 6032
-
 ```
-
-connect to the MySQL cluster as an 'app' (mysql-client -> ProxySQL -> MySQL instanes)
+without having MySQL client installed:
 ```
-./proxysql_app.sh
-```
-You can also use any MySQL compatible client:
-```
-host: 127.0.0.1
-user: app
-passwd: gempa
-port: 6033
+docker exec -it damp_proxysql mysql -h 127.0.0.1 -u admin  -padmin -P 6032
 ```
 
 Run the following to reset the env and restart the test from scratch
@@ -90,52 +316,19 @@ Run the following to reset the env and restart the test from scratch
 ./dump_reset.sh
 ```
 
+notes:
+- the /etc/proxysql.cnf is confiured via a template, but be aware that the ProxySQL only read it during the first start (when it create the sqlite database) - you can read more here https://github.com/sysown/proxysql/blob/master/doc/configuration_system.md
+- mha config files can be found under /etc/mha/mha_damp_server_${clustername}.cnf
+- ProxySQL log /var/lib/proxysql/proxysql.log
 
-Some notes:
-- the /etc/proxysql.cnf file left intact intentionally to avoid confusion, the ProxySQL only read it during the first start (when it create the sqlite database) - you can read more here https://github.com/sysown/proxysql/blob/master/doc/configuration_system.md
-- Every request the 'app' user executes goes to the hostgroup=1 which is the first cluster (for now)
-
-List of MySQL servers:
-```
-mysql> select * from runtime_mysql_servers;
-+--------------+------------+------+--------+--------+-------------+-----------------+---------------------+---------+----------------+---------+
-| hostgroup_id | hostname   | port | status | weight | compression | max_connections | max_replication_lag | use_ssl | max_latency_ms | comment |
-+--------------+------------+------+--------+--------+-------------+-----------------+---------------------+---------+----------------+---------+
-| 1            | 172.17.0.2 | 3306 | ONLINE | 1      | 0           | 1000            | 20                  | 0       | 0              |         |
-| 3            | 172.17.0.5 | 3306 | ONLINE | 1      | 0           | 1000            | 20                  | 0       | 0              |         |
-| 2            | 172.17.0.3 | 3306 | ONLINE | 1      | 0           | 1000            | 20                  | 0       | 0              |         |
-| 2            | 172.17.0.4 | 3306 | ONLINE | 1      | 0           | 1000            | 20                  | 0       | 0              |         |
-| 4            | 172.17.0.6 | 3306 | ONLINE | 1      | 0           | 1000            | 20                  | 0       | 0              |         |
-+--------------+------------+------+--------+--------+-------------+-----------------+---------------------+---------+----------------+---------+
-5 rows in set (0.01 sec)
-```
-List of hostgroups:
-```
-mysql> select * from runtime_mysql_replication_hostgroups;
-+------------------+------------------+------------------------+
-| writer_hostgroup | reader_hostgroup | comment                |
-+------------------+------------------+------------------------+
-| 1                | 2                | damp_server_zaphod     |
-| 3                | 4                | damp_server_arthurdent |
-+------------------+------------------+------------------------+
-2 rows in set (0.00 sec)
-```
-App user (default hostgroup is 1, the traffic will go there unless told otherwise):
-```
-mysql> select * from mysql_users;
-+----------+----------+--------+---------+-------------------+----------------+---------------+------------------------+--------------+---------+----------+-----------------+
-| username | password | active | use_ssl | default_hostgroup | default_schema | schema_locked | transaction_persistent | fast_forward | backend | frontend | max_connections |
-+----------+----------+--------+---------+-------------------+----------------+---------------+------------------------+--------------+---------+----------+-----------------+
-| app      | gempa    | 1      | 0       | 1                 | NULL           | 0             | 0                      | 0            | 1       | 1        | 200             |
-+----------+----------+--------+---------+-------------------+----------------+---------------+------------------------+--------------+---------+----------+-----------------+
-1 row in set (0.00 sec)
-```
-
-###TODO:
-- add MHA(in progress)
-- add databases and some test scenarios
+Useful links, articles:
+https://github.com/sysown/proxysql/blob/master/doc/configuration_howto.md
+http://www.slideshare.net/DerekDowney/proxysql-tutorial-plam-2016
+http://www.slideshare.net/atezuysal/proxysql-use-case-scenarios-plam-2016
 
 Thanks
 - René Cannaò 
-- Derek Downey 
 - Ben Mildren
+- Dave Turner
+- Derek Downey 
+- Frédéric 'lefred' Descamps 
