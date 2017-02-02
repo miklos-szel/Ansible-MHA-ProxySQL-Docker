@@ -17,6 +17,7 @@ do
         "[runtime] Show users"
         "[runtime] Show repliation_hostgroups"
         "[runtime] Show query_rules"
+        "[runtime] Show global_variables"
         "[stats] Show connection_pool"
         "[stats] Show command_counters"
         "[stats] Show query digest"
@@ -81,6 +82,12 @@ do
 
         "[runtime] Show repliation_hostgroups")
             query="SELECT * FROM runtime_mysql_replication_hostgroups"
+            exec_query "$query"
+            break
+            ;;
+
+        "[runtime] Show global_variables")
+            query="select * from global_variables;"
             exec_query "$query"
             break
             ;;
