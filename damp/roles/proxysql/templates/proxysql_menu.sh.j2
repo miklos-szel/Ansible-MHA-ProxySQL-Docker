@@ -10,9 +10,6 @@ do
     echo "ProxySQL admin"
     options=(
         "ProxySQL Admin Shell"
-{% for item in clusters %}
-        "MySQL Connect to '{{ item.short_name }}' via ProxySQL"
-{% endfor %}
         "[runtime] Show servers"
         "[runtime] Show users"
         "[runtime] Show replication_hostgroups"
@@ -26,6 +23,7 @@ do
         "[log] Show ping"
         "[log] Show read_only"
 {% for item in clusters %}
+        "[mysql][{{ item.short_name }}] Connect to cluster via ProxySQL"
         "[test][{{ item.short_name }}] sysbench prepare"
         "[test][{{ item.short_name }}] sysbench run - 15 sec, ro"
         "[test][{{ item.short_name }}] sysbench run - 60 sec, ro"
@@ -61,14 +59,6 @@ do
             break
             ;;
 
-{% for item in clusters %}
-        "MySQL Connect to '{{ item.short_name }}' via ProxySQL")
-            cmd="mysql -h $host --user=app{{ item.hostgroup }} --password=app{{ item.hostgroup }} --port $app_port"
-            exec_cmd "$cmd"
-            break
-            ;;
-
-{% endfor %}
         "[runtime] Show servers")
             query="SELECT hostgroup_id as hg, hostname,port,status,weight,max_connections, comment FROM runtime_mysql_servers ORDER BY hostgroup_id,hostname ASC;"
             exec_query "$query"
@@ -135,6 +125,11 @@ do
             break
             ;;
 {% for item in clusters %}
+        "[mysql][{{ item.short_name }}] Connect to cluster via ProxySQL")
+            cmd="mysql -h $host --user=app{{ item.hostgroup }} --password=app{{ item.hostgroup }} --port $app_port"
+            exec_cmd "$cmd"
+            break
+            ;;
         "[test][{{ item.short_name }}] sysbench prepare")
             cmd="sysbench --report-interval=5 --num-threads=4 --num-requests=0 --max-time=20 --test=/usr/share/doc/sysbench/tests/db/oltp.lua --mysql-user=app{{ item.hostgroup }} --mysql-password=app{{ item.hostgroup }} --oltp-table-size=10000 --mysql-host=$host --mysql-port=$app_port prepare"
             exec_cmd "$cmd"
