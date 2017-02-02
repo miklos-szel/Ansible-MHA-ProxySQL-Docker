@@ -57,7 +57,7 @@ hostgroup=3
     
 ## start the Docker and install/setup ProxySQL(1.3.2)/MHA and sysbench  
 ```
-./docker_start.sh
+./damp_start.sh
 ```
 
 From inside the container run the following:
