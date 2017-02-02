@@ -15,7 +15,7 @@ do
 {% endfor %}
         "[runtime] Show servers"
         "[runtime] Show users"
-        "[runtime] Show repliation_hostgroups"
+        "[runtime] Show replication_hostgroups"
         "[runtime] Show query_rules"
         "[runtime] Show global_variables"
         "[stats] Show connection_pool"
@@ -80,7 +80,7 @@ do
             break
             ;;
 
-        "[runtime] Show repliation_hostgroups")
+        "[runtime] Show replication_hostgroups")
             query="SELECT * FROM runtime_mysql_replication_hostgroups"
             exec_query "$query"
             break
