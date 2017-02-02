@@ -253,11 +253,90 @@ also check the query digest table
 ```
 
 
+###Example test scenario #2:
+testing online failover while reading from a cluster (all servers are up and running we only change the replication topology)
+login to the container in 2 terminals:
+```
+./proxysql_login_docker.sh
+```
+and execute proxysql_menu.sh in both of them.
+check the serverlist:
+```
+4) [runtime] Show servers
++----+------------+------+--------+--------+-----------------+------------------------+
+| hg | hostname   | port | status | weight | max_connections | comment                |
++----+------------+------+--------+--------+-----------------+------------------------+
+| 1  | 172.17.0.3 | 3306 | ONLINE | 1      | 1000            | damp_server_zaphod     |
+| 2  | 172.17.0.4 | 3306 | ONLINE | 1      | 1000            | damp_server_zaphod     |
+| 2  | 172.17.0.5 | 3306 | ONLINE | 1      | 1000            | damp_server_zaphod     |
+| 3  | 172.17.0.6 | 3306 | ONLINE | 1      | 1000            | damp_server_arthurdent |
+| 4  | 172.17.0.7 | 3306 | ONLINE | 1      | 1000            | damp_server_arthurdent |
++----+------------+------+--------+--------+-----------------+------------------------+
+```
+The current masters are the 172.17.0.3 and 172.17.0.6 (even hostgroups)
+```
+ 6) [runtime] Show repliation_hostgroups
++------------------+------------------+------------------------+
+| writer_hostgroup | reader_hostgroup | comment                |
++------------------+------------------+------------------------+
+| 1                | 2                | damp_server_zaphod     |
+| 3                | 4                | damp_server_arthurdent |
++------------------+------------------+------------------------+
+```
+
+execute the following in one terminal:
+(skip 16) if you already ran it)
+```
+16) [test][zaphod] sysbench prepare
+
+18) [test][zaphod] sysbench run - 60 sec, ro
+```
+
+while the sysbench running, execute the online interactive failover in the other terminal:
+```
+21) [HA][zaphod] MHA online failover (interactive. you have to answer YES twice)
+From:
+172.17.0.3(172.17.0.3:3306) (current master)
+ +--172.17.0.4(172.17.0.4:3306)
+ +--172.17.0.5(172.17.0.5:3306)
+
+To:
+172.17.0.4(172.17.0.4:3306) (new master)
+ +--172.17.0.5(172.17.0.5:3306)
+ +--172.17.0.3(172.17.0.3:3306)
+```
+
+The only things we noticed during the failover were some reconnects:
+```
+[  13s] threads: 4, tps: 341.04, reads: 4746.60, writes: 0.00, response time: 17.56ms (95%), errors: 0.00, reconnects:  0.00
+[  14s] threads: 4, tps: 337.03, reads: 4767.49, writes: 0.00, response time: 22.38ms (95%), errors: 0.00, reconnects:  3.00
+[  15s] threads: 4, tps: 297.84, reads: 4236.67, writes: 0.00, response time: 26.13ms (95%), errors: 0.00, reconnects:  4.00
+[  16s] threads: 4, tps: 294.14, reads: 4097.92, writes: 0.00, response time: 26.56ms (95%), errors: 0.00, reconnects:  0.00
+[  17s] threads: 4, tps: 398.98, reads: 5590.68, writes: 0.00, response time: 16.87ms (95%), errors: 0.00, reconnects:  0.00
+```
+otherwise everything was seamless.
+
+```
+ 4) [runtime] Show servers
++----+------------+------+--------+--------+-----------------+------------------------+
+| hg | hostname   | port | status | weight | max_connections | comment                |
++----+------------+------+--------+--------+-----------------+------------------------+
+| 1  | 172.17.0.4 | 3306 | ONLINE | 1      | 1000            | damp_server_zaphod     |
+| 2  | 172.17.0.3 | 3306 | ONLINE | 1      | 1000            | damp_server_zaphod     |
+| 2  | 172.17.0.4 | 3306 | ONLINE | 1      | 1000            | damp_server_zaphod     |
+| 2  | 172.17.0.5 | 3306 | ONLINE | 1      | 1000            | damp_server_zaphod     |
+| 3  | 172.17.0.6 | 3306 | ONLINE | 1      | 1000            | damp_server_arthurdent |
+| 4  | 172.17.0.7 | 3306 | ONLINE | 1      | 1000            | damp_server_arthurdent |
++----+------------+------+--------+--------+-----------------+------------------------+
+```
+hostgroup 1 -> 172.17.0.4 (master)
+hostgroup 2 -> 172.17.0.3,172.17.0.5 (slave)
+ProxySQL detected the changes and reassigned the servers to the proper repliation_hostgroups
 
 
 
 
-
+----
 
 ####Edit the global configuration file if you want to change defaults, credentials.
 damp/group_vars/all
@@ -297,7 +376,7 @@ mysql:
     repl_passwd: slavepass
 ```
 
-Connect  manually:
+####Connect  manually:
 ProxySQL admin interface (with any MySQL compatible client)
 ```
 host: 127.0.0.1
@@ -322,8 +401,11 @@ notes:
 - ProxySQL log /var/lib/proxysql/proxysql.log
 
 Useful links, articles:
+
 https://github.com/sysown/proxysql/blob/master/doc/configuration_howto.md
+
 http://www.slideshare.net/DerekDowney/proxysql-tutorial-plam-2016
+
 http://www.slideshare.net/atezuysal/proxysql-use-case-scenarios-plam-2016
 
 Thanks
