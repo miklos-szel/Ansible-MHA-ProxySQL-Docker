@@ -1,5 +1,4 @@
 ---
-#this part currently doesn't work as the apt is broken due to mysql
 - name: install dependencies for MHA Manager
   apt: name="{{ item }}" state=present
   with_items:
@@ -7,12 +6,12 @@
 
 
 - copy:
-    src=mha/mha4mysql-node_0.57-0_all.deb
+    src=mha/mha4mysql-node_0.56-0_all.deb
     dest=/tmp/
     owner=root
     mode=0700
 
 - name: Install mha manager
   apt:
-    deb=/tmp/mha4mysql-node_0.57-0_all.deb
+    deb=/tmp/mha4mysql-node_0.56-0_all.deb
 

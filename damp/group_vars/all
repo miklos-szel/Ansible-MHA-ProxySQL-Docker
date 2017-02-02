@@ -1,20 +1,33 @@
+proxysql_version: 1.3.3
+proxysql_filename: proxysql_{{ proxysql_version }}-ubuntu14_amd64.deb
+
 proxysql:
+  admin:
+    host: 127.0.0.1
+    port: 6032
+    user: admin
+    passwd: admin
     interface: 0.0.0.0
-    admin_host: 127.0.0.1
-    admin_port: 6032
-    admin_user: admin
-    admin_passwd: admin
-    app_user: app
-    app_passwd: gempa
-    app_default_hostgroup: 1
-    app_port: 6033
-    app_priv: '*.*:ALL,GRANT'
-    app_host: '%'
-    monitor_user: monitor
-    monitor_passwd: monitor
-    monitor_priv: '*.*:ALL'
-    monitor_host: '%'
-    app_max_conn: 200
+  app:
+    user: app
+    passwd: gempa
+    default_hostgroup: 1
+    port: 6033
+    priv: '*.*:CREATE,DELETE,DROP,EXECUTE,INSERT,SELECT,UPDATE,INDEX'
+    host: '%'
+    max_conn: 200 
+  monitor:
+    user: monitor
+    passwd: monitor
+    priv: '*.*:USAGE,REPLICATION CLIENT'
+    host: '%'
+  global_variables:
+    mysql-default_query_timeout: 120000
+    mysql-max_allowed_packet: 67108864
+    mysql-monitor_read_only_timeout: 600
+    mysql-monitor_ping_timeout: 600
+    mysql-max_connections: 1024
+
 mysql:
     login_user: root
     login_passwd: mysecretpass

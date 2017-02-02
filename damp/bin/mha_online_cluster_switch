@@ -1,1 +1,0 @@
-masterha_master_switch --conf=/etc/mha/mha_damp_server_$1.cnf --master_state=alive --orig_master_is_new_slave

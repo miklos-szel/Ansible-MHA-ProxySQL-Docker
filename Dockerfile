@@ -1,12 +1,11 @@
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 
 
 RUN apt-get update && apt-get install -y \
   curl \
   less \
-#  ssh  \
-  mysql-client \
-  python-mysqldb \
+  ssh  \
+  sudo \
   vim 
 
 #RUN ssh-keygen -q -t rsa -f /root/.ssh/id_rsa

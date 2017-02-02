@@ -1,0 +1,16 @@
+---
+- name: Intall sysbench 
+  apt: 
+    name=sysbench 
+
+- name: create database sbtest on all clusters 
+  mysql_db: >
+    login_host={{ hostvars[item]['inventory_hostname'] }}
+    login_user={{ mysql.login_user }}
+    login_password={{ mysql.login_passwd }}
+    name=sbtest
+    state=present
+  when: hostvars[item]['mysql_role']  == "master"
+  with_inventory_hostnames: all:!proxysql
+
+

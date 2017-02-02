@@ -22,14 +22,14 @@
     - "{{ server_groups }}"
 
 - copy:
-    src=mha/mha4mysql-manager_0.57-0_all.deb
+    src=mha/mha4mysql-manager_0.56-0_all.deb
     dest=/tmp/
     owner=root
     mode=0700
 
 - name: Install mha manager   
   apt:
-    deb=/tmp/mha4mysql-manager_0.57-0_all.deb
+    deb=/tmp/mha4mysql-manager_0.56-0_all.deb
 
 - name: copy mha scripts
   copy: >
