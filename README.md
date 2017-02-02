@@ -64,28 +64,29 @@ From inside the container run the following:
 ```
 proxysql_menu.sh
 
+ProxySQL admin
  1) ProxySQL Admin Shell
- 2) MySQL Connect to 'zaphod' via ProxySQL
- 3) MySQL Connect to 'arthurdent' via ProxySQL
- 4) [runtime] Show servers
- 5) [runtime] Show users
- 6) [runtime] Show replication_hostgroups
- 7) [runtime] Show query_rules
- 8) [runtime] Show global_variables
- 9) [stats] Show connection_pool
-10) [stats] Show command_counters
-11) [stats] Show query digest
-12) [stats] Show hostgroups
-13) [log] Show connect
-14) [log] Show ping
-15) [log] Show read_only
-16) [test][zaphod] sysbench prepare
-17) [test][zaphod] sysbench run - 15 sec, ro
-18) [test][zaphod] sysbench run - 60 sec, ro
-19) [test][zaphod] Split R/W
-20) [test][zaphod] Create 'world' sample db
-21) [HA][zaphod] MHA online failover (interactive)
-22) [HA][zaphod] MHA online failover (noninteractive)
+ 2) [runtime] Show servers
+ 3) [runtime] Show users
+ 4) [runtime] Show replication_hostgroups
+ 5) [runtime] Show query_rules
+ 6) [runtime] Show global_variables
+ 7) [stats] Show connection_pool
+ 8) [stats] Show command_counters
+ 9) [stats] Show query digest
+10) [stats] Show hostgroups
+11) [log] Show connect
+12) [log] Show ping
+13) [log] Show read_only
+14) [mysql][zaphod] Connect to cluster via ProxySQL
+15) [test][zaphod] sysbench prepare
+16) [test][zaphod] sysbench run - 15 sec, ro
+17) [test][zaphod] sysbench run - 60 sec, ro
+18) [test][zaphod] Split R/W
+19) [test][zaphod] Create 'world' sample db
+20) [HA][zaphod] MHA online failover (interactive)
+21) [HA][zaphod] MHA online failover (noninteractive)
+22) [mysql][arthurdent] Connect to cluster via ProxySQL
 23) [test][arthurdent] sysbench prepare
 24) [test][arthurdent] sysbench run - 15 sec, ro
 25) [test][arthurdent] sysbench run - 60 sec, ro
@@ -102,7 +103,7 @@ These menupoint are self explanatory shortcuts to Linux commands/sqls. All comma
 
 Some expample outputs:
 
-4) [runtime] Show servers
+ 2) [runtime] Show servers
 ```
 +----+------------+------+--------+--------+-----------------+------------------------+
 | hg | hostname   | port | status | weight | max_connections | comment                |
@@ -116,7 +117,7 @@ Some expample outputs:
 5 rows in set (0.01 sec)
 ```
 
-5) [runtime] Show users
+3) [runtime] Show users
 ```
 +----------+-------------------------------------------+----+--------+-----------------+
 | username | password                                  | hg | active | max_connections |
@@ -146,7 +147,7 @@ port: 6033
 ```
 
 
- 6) [runtime] Show replication_hostgroups
+ 4) [runtime] Show replication_hostgroups
 ```
 +------------------+------------------+------------------------+
 | writer_hostgroup | reader_hostgroup | comment                |
@@ -162,13 +163,13 @@ App user (default hostgroup is the hostgroup in the inventory file for a given c
 let's generate some traffic on the first cluster:
 execute these one after another
 ```
-16) [test][zaphod] sysbench prepare
-17) [test][zaphod] sysbench run - 15 sec, ro
+15) [test][zaphod] sysbench prepare
+16) [test][zaphod] sysbench run - 15 sec, ro
 ```
 
 Then check the connection pool. We'll see that all traffic went to the master (reads and writes). By default ProxySQL sends all traffic to the writer_hostgroups
 ```
-9) [stats] Show connection_pool
+7) [stats] Show connection_pool
 
 +-----------+------------+----------+--------+----------+----------+--------+---------+---------+-----------------+-----------------+------------+
 | hostgroup | srv_host   | srv_port | status | ConnUsed | ConnFree | ConnOK | ConnERR | Queries | Bytes_data_sent | Bytes_data_recv | Latency_ms |
@@ -182,14 +183,14 @@ Then check the connection pool. We'll see that all traffic went to the master (r
 ```
 Tell ProxySQL to send all queries matching '^select' to the hostgroup 2 (readers)
 ```
-19) [test][zaphod] Split R/W
+18) [test][zaphod] Split R/W
 
 Command: mysql -h 127.0.0.1 -uadmin -padmin -P6032  -e 'REPLACE INTO mysql_query_rules(rule_id,active,match_pattern,destination_hostgroup,apply) VALUES(1000,1,'^select',2,0);LOAD MYSQL QUERY RULES TO RUNTIME;SAVE MYSQL QUERY RULES TO DISK;\G
 ```
 re-run the sysbench and check the connection pool afterwards
 ```
-17) [test][zaphod] sysbench run - 15 sec, ro
-9) [stats] Show connection_pool
+16) [test][zaphod] sysbench run - 15 sec, ro
+7) [stats] Show connection_pool
 +-----------+------------+----------+--------+----------+----------+--------+---------+---------+-----------------+-----------------+------------+
 | hostgroup | srv_host   | srv_port | status | ConnUsed | ConnFree | ConnOK | ConnERR | Queries | Bytes_data_sent | Bytes_data_recv | Latency_ms |
 +-----------+------------+----------+--------+----------+----------+--------+---------+---------+-----------------+-----------------+------------+
@@ -237,7 +238,7 @@ login to the container in 2 terminals:
 and execute proxysql_menu.sh in both of them.
 check the serverlist:
 ```
-4) [runtime] Show servers
+2) [runtime] Show servers
 +----+------------+------+--------+--------+-----------------+------------------------+
 | hg | hostname   | port | status | weight | max_connections | comment                |
 +----+------------+------+--------+--------+-----------------+------------------------+
@@ -250,7 +251,7 @@ check the serverlist:
 ```
 The current masters are the 172.17.0.3 and 172.17.0.6 (even hostgroups)
 ```
- 6) [runtime] Show replication_hostgroups
+4) [runtime] Show replication_hostgroups
 +------------------+------------------+------------------------+
 | writer_hostgroup | reader_hostgroup | comment                |
 +------------------+------------------+------------------------+
@@ -260,16 +261,16 @@ The current masters are the 172.17.0.3 and 172.17.0.6 (even hostgroups)
 ```
 
 execute the following in one terminal:
-(skip 16) if you already ran it)
+(skip 15) if you already ran it)
 ```
-16) [test][zaphod] sysbench prepare
+15) [test][zaphod] sysbench prepare
 
-18) [test][zaphod] sysbench run - 60 sec, ro
+17) [test][zaphod] sysbench run - 60 sec, ro
 ```
 
 while the sysbench running, execute the online interactive failover in the other terminal:
 ```
-21) [HA][zaphod] MHA online failover (interactive. you have to answer YES twice)
+20) [HA][zaphod] MHA online failover (interactive. you have to answer YES twice)
 From:
 172.17.0.3(172.17.0.3:3306) (current master)
  +--172.17.0.4(172.17.0.4:3306)
@@ -292,7 +293,7 @@ The only things we noticed during the failover were some reconnects:
 otherwise everything was seamless.
 
 ```
- 4) [runtime] Show servers
+2) [runtime] Show servers
 +----+------------+------+--------+--------+-----------------+------------------------+
 | hg | hostname   | port | status | weight | max_connections | comment                |
 +----+------------+------+--------+--------+-----------------+------------------------+
@@ -389,3 +390,4 @@ Thanks
 - Dave Turner
 - Derek Downey 
 - Frédéric 'lefred' Descamps 
+
