@@ -1,0 +1,62 @@
+#file proxysql.cfg
+
+# This config file is parsed using libconfig , and its grammar is described in:
+# http://www.hyperrealm.com/libconfig/libconfig_manual.html#Configuration-File-Grammar
+# Grammar is also copied at the end of this file
+
+
+
+datadir="/var/lib/proxysql"
+
+admin_variables=
+{
+	admin_credentials="{{ proxysql.admin.user }}:{{ proxysql.admin.passwd }}"
+	mysql_ifaces="{{ proxysql.admin.interface }}:{{ proxysql.admin.port }}"
+	refresh_interval=2000
+}
+
+mysql_variables=
+{
+        threads=4
+        max_connections=2048
+        default_query_delay=0
+        default_query_timeout=36000000
+        have_compress=true
+        poll_timeout=2000
+        interfaces="0.0.0.0:{{ proxysql.app.port }};/tmp/proxysql.sock"
+        default_schema="information_schema"
+        stacksize=1048576
+        server_version="5.5.30"
+        connect_timeout_server=3000
+        monitor_history=600000
+        monitor_connect_interval=60000
+        monitor_ping_interval=10000
+        monitor_read_only_interval=1500
+        monitor_read_only_timeout=500
+        ping_interval_server=120000
+        ping_timeout_server=500
+        commands_stats=true
+        sessions_sort=true
+        connect_retries_on_failure=10
+}
+
+
+# defines all the MySQL servers
+mysql_servers =
+(
+)
+
+
+# defines all the MySQL users
+mysql_users:
+(
+)
+
+
+
+#defines MySQL Query Rules
+mysql_query_rules:
+(
+)
+
+

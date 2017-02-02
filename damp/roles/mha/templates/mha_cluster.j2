@@ -1,0 +1,29 @@
+[server default]
+# mysql user and password
+user={{ mysql.login_user }}
+password={{ mysql.login_passwd }} 
+# replication user password
+repl_user={{ mysql.login_user }}
+repl_password={{ mysql.login_passwd }}
+
+remote_workdir=/var/tmp
+# working directory on the manager
+manager_workdir=/var/log/mha/{{ item }}
+
+# manager log file
+manager_log=/var/log/mha/{{ item }}/{{ item }}.log
+ping_interval=15
+
+master_ip_online_change_script=/usr/local/bin/master_ip_online_change
+
+master_pid_file=/var/log/mysqld.pid
+ssh_user=root
+log_level=debug
+
+
+{% for instance in groups[item]   %}
+[server_{{ instance }}]
+hostname={{ instance }}
+port=3306
+{% endfor -%}
+

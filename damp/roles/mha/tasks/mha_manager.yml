@@ -1,0 +1,43 @@
+---
+- set_fact: 
+    server_groups="{{ groups.keys()  | map('regex_search','damp.*') | select('string') | list }}"
+
+- name: install dependencies for MHA Manager
+  apt: name="{{ item }}" state=present update_cache=yes cache_valid_time=3600
+  with_items:
+    - libdbi-perl
+    - libdbd-mysql-perl
+    - libconfig-tiny-perl
+    - liblog-dispatch-perl
+    - libparallel-forkmanager-perl
+      
+- name: create log directories for MHA 
+  file: >
+    path=/var/log/mha/{{ item }}
+    owner=root 
+    group=root
+    mode=0700
+    state=directory
+  with_items:
+    - "{{ server_groups }}"
+
+- copy:
+    src=mha/mha4mysql-manager_0.56-0_all.deb
+    dest=/tmp/
+    owner=root
+    mode=0700
+
+- name: Install mha manager   
+  apt:
+    deb=/tmp/mha4mysql-manager_0.56-0_all.deb
+
+- name: copy mha scripts
+  copy: >
+    src=mha/scripts/{{ item }} 
+    dest=/usr/local/bin/{{ item }}  
+    owner=root 
+    mode=0700
+  with_items:
+    - master_ip_online_change
+  
+

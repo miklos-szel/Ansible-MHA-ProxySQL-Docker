@@ -1,0 +1,17 @@
+---
+- name: install dependencies for MHA Manager
+  apt: name="{{ item }}" state=present
+  with_items:
+    - libdbd-mysql-perl
+
+
+- copy:
+    src=mha/mha4mysql-node_0.56-0_all.deb
+    dest=/tmp/
+    owner=root
+    mode=0700
+
+- name: Install mha manager
+  apt:
+    deb=/tmp/mha4mysql-node_0.56-0_all.deb
+

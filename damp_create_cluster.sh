@@ -48,7 +48,7 @@ do
         sed   -e  "s/server-id=/server-id=${i}/"  $currdir/my.cnf> $currdir/mysql_hosts/${server_name}${i}/conf.d/my.cnf
     fi
 
-    cid=$(docker run --name ${server_name}${i} -d -v $currdir/mysql_hosts/${server_name}${i}/conf.d:/etc/mysql/conf.d -v $currdir/mysql_hosts/${server_name}${i}/log_mysql:/var/log/mysql  -e MYSQL_ROOT_PASSWORD=mysecretpass -d percona:5.6)
+    cid=$(docker run --name ${server_name}${i} -d -v $currdir/mysql_hosts/${server_name}${i}/conf.d:/etc/mysql/conf.d -v $currdir/mysql_hosts/${server_name}${i}/log_mysql:/var/log/mysql  -e MYSQL_ROOT_PASSWORD=mysecretpass -d mysql:5.6)
 
     server_ip=$( docker-ip $cid )
     echo "${server_name}${i} $cid($server_ip)"
@@ -74,13 +74,14 @@ do
 done
 
 echo "add replication user to the master (${server_name})"
+docker exec -ti ${server_name}1  'mysql' -uroot -pmysecretpass -vvv -e "select @@version;"
 docker exec -ti ${server_name}1  'mysql' -uroot -pmysecretpass -vvv -e "GRANT REPLICATION SLAVE ON *.* TO repl@'%' IDENTIFIED BY 'slavepass'\G"
 
 #configure replication on all hosts
 for i in $(seq 2  $num_of_servers)
 do
 
-    docker exec -ti ${server_name}${i}  'mysql' -uroot -pmysecretpass -e"change master to master_host='$master_ip',master_user='repl',master_password='slavepass',master_log_file='mysqld-bin.000004',master_log_pos=310;" -vvv
+    docker exec -ti ${server_name}${i}  'mysql' -uroot -pmysecretpass -e"change master to master_host='$master_ip',master_user='repl',master_password='slavepass',master_log_file='mysqld-bin.000004',master_log_pos=120;" -vvv
 
     echo "start replication"
     docker exec -ti ${server_name}${i}  'mysql' -uroot -pmysecretpass -e"START SLAVE\G" -vvv 
