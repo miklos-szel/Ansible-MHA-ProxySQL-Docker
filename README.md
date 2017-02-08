@@ -6,8 +6,7 @@ The big picture:
 ![img](http://i.imgur.com/5DXvem4.png)
 
 
-Prezentation about [DAMP](https://www.slideshare.net/MiklosSzel/painless-mysql-ha-scalability-and-flexibility-with-ansible-mha-and-proxysql/edit?src=slideview
-)
+Prezentation about [DAMP](http://www.slideshare.net/MiklosSzel/painless-mysql-ha-scalability-and-flexibility-with-ansible-mha-and-proxysql)
 
 
 
