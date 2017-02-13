@@ -10,8 +10,8 @@ do
     echo "ProxySQL admin"
     options=(
         "ProxySQL Admin Shell"
-        "MySQL Connect to 'mukka' via ProxySQL"
-        "MySQL Connect to 'rol' via ProxySQL"
+        "MySQL Connect to 'zaphod' via ProxySQL"
+        "MySQL Connect to 'arthurdent' via ProxySQL"
         "[runtime] Show servers"
         "[runtime] Show users"
         "[runtime] Show repliation_hostgroups"
@@ -23,20 +23,20 @@ do
         "[log] Show connect"
         "[log] Show ping"
         "[log] Show read_only"
-        "[test][mukka] sysbench prepare"
-        "[test][mukka] sysbench run - 15 sec, ro"
-        "[test][mukka] sysbench run - 60 sec, ro"
-        "[test][mukka] Split R/W"
-        "[test][mukka] Create 'world' sample db"
-        "[HA][mukka] MHA online failover (interactive)"
-        "[HA][mukka] MHA online failover (noninteractive)"
-        "[test][rol] sysbench prepare"
-        "[test][rol] sysbench run - 15 sec, ro"
-        "[test][rol] sysbench run - 60 sec, ro"
-        "[test][rol] Split R/W"
-        "[test][rol] Create 'world' sample db"
-        "[HA][rol] MHA online failover (interactive)"
-        "[HA][rol] MHA online failover (noninteractive)"
+        "[test][zaphod] sysbench prepare"
+        "[test][zaphod] sysbench run - 15 sec, ro"
+        "[test][zaphod] sysbench run - 60 sec, ro"
+        "[test][zaphod] Split R/W"
+        "[test][zaphod] Create 'world' sample db"
+        "[HA][zaphod] MHA online failover (interactive)"
+        "[HA][zaphod] MHA online failover (noninteractive)"
+        "[test][arthurdent] sysbench prepare"
+        "[test][arthurdent] sysbench run - 15 sec, ro"
+        "[test][arthurdent] sysbench run - 60 sec, ro"
+        "[test][arthurdent] Split R/W"
+        "[test][arthurdent] Create 'world' sample db"
+        "[HA][arthurdent] MHA online failover (interactive)"
+        "[HA][arthurdent] MHA online failover (noninteractive)"
         "Quit")
     PS3='Please enter your choice: '
     
@@ -64,13 +64,13 @@ do
             break
             ;;
 
-        "MySQL Connect to 'mukka' via ProxySQL")
+        "MySQL Connect to 'zaphod' via ProxySQL")
             cmd="mysql -h $host --user=app1 --password=app1 --port $app_port"
             exec_cmd "$cmd"
             break
             ;;
 
-        "MySQL Connect to 'rol' via ProxySQL")
+        "MySQL Connect to 'arthurdent' via ProxySQL")
             cmd="mysql -h $host --user=app3 --password=app3 --port $app_port"
             exec_cmd "$cmd"
             break
@@ -135,75 +135,75 @@ do
             exec_query "$query"
             break
             ;;
-        "[test][mukka] sysbench prepare")
+        "[test][zaphod] sysbench prepare")
             cmd="sysbench --report-interval=5 --num-threads=4 --num-requests=0 --max-time=20 --test=/usr/share/doc/sysbench/tests/db/oltp.lua --mysql-user=app1 --mysql-password=app1 --oltp-table-size=10000 --mysql-host=$host --mysql-port=$app_port prepare"
             exec_cmd "$cmd"
             break
             ;;
-        "[test][mukka] sysbench run - 15 sec, ro")
+        "[test][zaphod] sysbench run - 15 sec, ro")
             cmd="sysbench --report-interval=1 --num-threads=4 --num-requests=0  --test=/usr/share/doc/sysbench/tests/db/oltp.lua --mysql-user=app1 --mysql-password=app1 --oltp-table-size=10000 --mysql-host=$host --mysql-port=$app_port --oltp-read-only=on --mysql-ignore-errors=all  --max-time=15  run"
             exec_cmd "$cmd"
             break
             ;;
-        "[test][mukka] sysbench run - 60 sec, ro")
+        "[test][zaphod] sysbench run - 60 sec, ro")
             cmd="sysbench --report-interval=1 --num-threads=4 --num-requests=0  --test=/usr/share/doc/sysbench/tests/db/oltp.lua --mysql-user=app1 --mysql-password=app1 --oltp-table-size=10000 --mysql-host=$host --mysql-port=$app_port --oltp-read-only=on --mysql-ignore-errors=all  --max-time=60  run"
             exec_cmd "$cmd"
             break
             ;;
 
-        "[HA][mukka] MHA online failover (interactive)")
-            cmd="masterha_master_switch --conf=/etc/mha/mha_damp_server_mukka.cnf --master_state=alive --orig_master_is_new_slave --interactive=1"
+        "[HA][zaphod] MHA online failover (interactive)")
+            cmd="masterha_master_switch --conf=/etc/mha/mha_damp_server_zaphod.cnf --master_state=alive --orig_master_is_new_slave --interactive=1"
             exec_cmd "$cmd"
             break
             ;;
-        "[HA][mukka] MHA online failover (noninteractive)")
-            cmd="masterha_master_switch --conf=/etc/mha/mha_damp_server_mukka.cnf --master_state=alive --orig_master_is_new_slave --interactive=0"
+        "[HA][zaphod] MHA online failover (noninteractive)")
+            cmd="masterha_master_switch --conf=/etc/mha/mha_damp_server_zaphod.cnf --master_state=alive --orig_master_is_new_slave --interactive=0"
             exec_cmd "$cmd"
             break
             ;;
-        "[test][mukka] Split R/W")
+        "[test][zaphod] Split R/W")
             query="REPLACE INTO mysql_query_rules(rule_id,active,match_pattern,destination_hostgroup,apply) VALUES(1000,1,'^select',2,0);LOAD MYSQL QUERY RULES TO RUNTIME;SAVE MYSQL QUERY RULES TO DISK;\G"
             exec_query "$query"
             break
             ;;
-        "[test][mukka] Create 'world' sample db")
+        "[test][zaphod] Create 'world' sample db")
             cmd="wget -O /tmp/world.sql.gz http://downloads.mysql.com/docs/world.sql.gz"
             exec_cmd "$cmd"
             zcat  /tmp/world.sql.gz | mysql -h $host   --user=app1  --password=app1 --port $app_port
             break
             ;;
-        "[test][rol] sysbench prepare")
+        "[test][arthurdent] sysbench prepare")
             cmd="sysbench --report-interval=5 --num-threads=4 --num-requests=0 --max-time=20 --test=/usr/share/doc/sysbench/tests/db/oltp.lua --mysql-user=app3 --mysql-password=app3 --oltp-table-size=10000 --mysql-host=$host --mysql-port=$app_port prepare"
             exec_cmd "$cmd"
             break
             ;;
-        "[test][rol] sysbench run - 15 sec, ro")
+        "[test][arthurdent] sysbench run - 15 sec, ro")
             cmd="sysbench --report-interval=1 --num-threads=4 --num-requests=0  --test=/usr/share/doc/sysbench/tests/db/oltp.lua --mysql-user=app3 --mysql-password=app3 --oltp-table-size=10000 --mysql-host=$host --mysql-port=$app_port --oltp-read-only=on --mysql-ignore-errors=all  --max-time=15  run"
             exec_cmd "$cmd"
             break
             ;;
-        "[test][rol] sysbench run - 60 sec, ro")
+        "[test][arthurdent] sysbench run - 60 sec, ro")
             cmd="sysbench --report-interval=1 --num-threads=4 --num-requests=0  --test=/usr/share/doc/sysbench/tests/db/oltp.lua --mysql-user=app3 --mysql-password=app3 --oltp-table-size=10000 --mysql-host=$host --mysql-port=$app_port --oltp-read-only=on --mysql-ignore-errors=all  --max-time=60  run"
             exec_cmd "$cmd"
             break
             ;;
 
-        "[HA][rol] MHA online failover (interactive)")
-            cmd="masterha_master_switch --conf=/etc/mha/mha_damp_server_rol.cnf --master_state=alive --orig_master_is_new_slave --interactive=1"
+        "[HA][arthurdent] MHA online failover (interactive)")
+            cmd="masterha_master_switch --conf=/etc/mha/mha_damp_server_arthurdent.cnf --master_state=alive --orig_master_is_new_slave --interactive=1"
             exec_cmd "$cmd"
             break
             ;;
-        "[HA][rol] MHA online failover (noninteractive)")
-            cmd="masterha_master_switch --conf=/etc/mha/mha_damp_server_rol.cnf --master_state=alive --orig_master_is_new_slave --interactive=0"
+        "[HA][arthurdent] MHA online failover (noninteractive)")
+            cmd="masterha_master_switch --conf=/etc/mha/mha_damp_server_arthurdent.cnf --master_state=alive --orig_master_is_new_slave --interactive=0"
             exec_cmd "$cmd"
             break
             ;;
-        "[test][rol] Split R/W")
+        "[test][arthurdent] Split R/W")
             query="REPLACE INTO mysql_query_rules(rule_id,active,match_pattern,destination_hostgroup,apply) VALUES(1000,1,'^select',4,0);LOAD MYSQL QUERY RULES TO RUNTIME;SAVE MYSQL QUERY RULES TO DISK;\G"
             exec_query "$query"
             break
             ;;
-        "[test][rol] Create 'world' sample db")
+        "[test][arthurdent] Create 'world' sample db")
             cmd="wget -O /tmp/world.sql.gz http://downloads.mysql.com/docs/world.sql.gz"
             exec_cmd "$cmd"
             zcat  /tmp/world.sql.gz | mysql -h $host   --user=app3  --password=app3 --port $app_port
