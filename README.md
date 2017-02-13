@@ -74,19 +74,19 @@ proxysql_menu.sh
 
 ProxySQL admin
  1) ProxySQL Admin Shell
- 2) [runtime] Show servers
- 3) [runtime] Show users
- 4) [runtime] Show replication_hostgroups
- 5) [runtime] Show query_rules
- 6) [runtime] Show global_variables
- 7) [stats] Show connection_pool
- 8) [stats] Show command_counters
- 9) [stats] Show query digest
-10) [stats] Show hostgroups
-11) [log] Show connect
-12) [log] Show ping
-13) [log] Show read_only
-14) [mysql][zaphod] Connect to cluster via ProxySQL
+ 2) MySQL Connect to 'zaphod' via ProxySQL
+ 3) MySQL Connect to 'arthurdent' via ProxySQL
+ 4) [runtime] Show servers
+ 5) [runtime] Show users
+ 6) [runtime] Show repliation_hostgroups
+ 7) [runtime] Show query_rules
+ 8) [stats] Show connection_pool
+ 9) [stats] Show command_counters
+10) [stats] Show query digest
+11) [stats] Show hostgroups
+12) [log] Show connect
+13) [log] Show ping
+14) [log] Show read_only
 15) [test][zaphod] sysbench prepare
 16) [test][zaphod] sysbench run - 15 sec, ro
 17) [test][zaphod] sysbench run - 60 sec, ro
@@ -94,15 +94,14 @@ ProxySQL admin
 19) [test][zaphod] Create 'world' sample db
 20) [HA][zaphod] MHA online failover (interactive)
 21) [HA][zaphod] MHA online failover (noninteractive)
-22) [mysql][arthurdent] Connect to cluster via ProxySQL
-23) [test][arthurdent] sysbench prepare
-24) [test][arthurdent] sysbench run - 15 sec, ro
-25) [test][arthurdent] sysbench run - 60 sec, ro
-26) [test][arthurdent] Split R/W
-27) [test][arthurdent] Create 'world' sample db
-28) [HA][arthurdent] MHA online failover (interactive)
-29) [HA][arthurdent] MHA online failover (noninteractive)
-30) Quit
+22) [test][arthurdent] sysbench prepare
+23) [test][arthurdent] sysbench run - 15 sec, ro
+24) [test][arthurdent] sysbench run - 60 sec, ro
+25) [test][arthurdent] Split R/W
+26) [test][arthurdent] Create 'world' sample db
+27) [HA][arthurdent] MHA online failover (interactive)
+28) [HA][arthurdent] MHA online failover (noninteractive)
+29) Quit
 ```
 
 This script can be also found outside of the container, but some options won't work from there (unless you have MHA/sysbench installed and set up:)).
@@ -111,7 +110,7 @@ These menupoint are self explanatory shortcuts to Linux commands/sqls. All comma
 
 Some expample outputs:
 
- 2) [runtime] Show servers
+4) [runtime] Show servers
 ```
 +----+------------+------+--------+--------+-----------------+------------------------+
 | hg | hostname   | port | status | weight | max_connections | comment                |
@@ -125,7 +124,7 @@ Some expample outputs:
 5 rows in set (0.01 sec)
 ```
 
-3) [runtime] Show users
+5) [runtime] Show users
 ```
 +----------+-------------------------------------------+----+--------+-----------------+
 | username | password                                  | hg | active | max_connections |
@@ -155,7 +154,7 @@ port: 6033
 ```
 
 
- 4) [runtime] Show replication_hostgroups
+6) [runtime] Show replication_hostgroups
 ```
 +------------------+------------------+------------------------+
 | writer_hostgroup | reader_hostgroup | comment                |
@@ -177,7 +176,7 @@ execute these one after another
 
 Then check the connection pool. We'll see that all traffic went to the master (reads and writes). By default ProxySQL sends all traffic to the writer_hostgroups
 ```
-7) [stats] Show connection_pool
+8) [stats] Show connection_pool
 
 +-----------+------------+----------+--------+----------+----------+--------+---------+---------+-----------------+-----------------+------------+
 | hostgroup | srv_host   | srv_port | status | ConnUsed | ConnFree | ConnOK | ConnERR | Queries | Bytes_data_sent | Bytes_data_recv | Latency_ms |
@@ -198,7 +197,7 @@ Command: mysql -h 127.0.0.1 -uadmin -padmin -P6032  -e 'REPLACE INTO mysql_query
 re-run the sysbench and check the connection pool afterwards
 ```
 16) [test][zaphod] sysbench run - 15 sec, ro
-7) [stats] Show connection_pool
+8) [stats] Show connection_pool
 +-----------+------------+----------+--------+----------+----------+--------+---------+---------+-----------------+-----------------+------------+
 | hostgroup | srv_host   | srv_port | status | ConnUsed | ConnFree | ConnOK | ConnERR | Queries | Bytes_data_sent | Bytes_data_recv | Latency_ms |
 +-----------+------------+----------+--------+----------+----------+--------+---------+---------+-----------------+-----------------+------------+
@@ -213,7 +212,7 @@ We can see that a lot of traffic went to the hostgroup 2 (readers)
 
 Check the query digest too:
 ```
-11) [stats] Show query digest
+10) [stats] Show query digest
 +----+----------+------------+----------------------------------------------------------------------------------+
 | hg | sum_time | count_star | substr(digest_text,1,80)                                                         |
 +----+----------+------------+----------------------------------------------------------------------------------+
@@ -246,7 +245,7 @@ login to the container in 2 terminals:
 and execute proxysql_menu.sh in both of them.
 check the serverlist:
 ```
-2) [runtime] Show servers
+4) [runtime] Show servers
 +----+------------+------+--------+--------+-----------------+------------------------+
 | hg | hostname   | port | status | weight | max_connections | comment                |
 +----+------------+------+--------+--------+-----------------+------------------------+
@@ -259,7 +258,7 @@ check the serverlist:
 ```
 The current masters are the 172.17.0.3 and 172.17.0.6 (even hostgroups)
 ```
-4) [runtime] Show replication_hostgroups
+6) [runtime] Show replication_hostgroups
 +------------------+------------------+------------------------+
 | writer_hostgroup | reader_hostgroup | comment                |
 +------------------+------------------+------------------------+
@@ -301,7 +300,7 @@ The only things we noticed during the failover were some reconnects:
 otherwise everything was seamless.
 
 ```
-2) [runtime] Show servers
+4) [runtime] Show servers
 +----+------------+------+--------+--------+-----------------+------------------------+
 | hg | hostname   | port | status | weight | max_connections | comment                |
 +----+------------+------+--------+--------+-----------------+------------------------+
