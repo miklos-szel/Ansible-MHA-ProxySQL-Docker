@@ -1,7 +1,14 @@
 ---
-- name: Intall sysbench 
+- name: Copy sysbench
+  copy: 
+    src=sysbench_0.5-3.xenial_amd64.deb
+    dest=/tmp/sysbench_0.5-3.xenial_amd64.deb
+    owner=root
+    mode=0644
+
+- name: Install sysbench 
   apt: 
-    name=sysbench 
+    deb: /tmp/sysbench_0.5-3.xenial_amd64.deb
 
 - name: create database sbtest on all clusters 
   mysql_db: >
