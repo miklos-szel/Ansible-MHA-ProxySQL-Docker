@@ -1,0 +1,36 @@
+---
+- set_fact: 
+    server_groups="{{ groups.keys()  | map('regex_search','damp.*') | select('string') | list }}"
+
+- name: install dependencies for Orchestrator
+  apt: name="{{ item }}" state=present update_cache=yes cache_valid_time=3600
+  with_items:
+    - mysql-server-5.7
+
+- name: Start MySQL
+  service:
+    name=mysql
+    state=running
+          
+- name: Install Orchestrator 2.1.4
+  apt: >
+    deb=https://github.com/github/orchestrator/releases/download/v2.1.4/orchestrator_2.1.4_amd64.deb
+
+- name: Generate Orchestrator config
+  template:
+    src=orchestrator-sample.conf.json.j2
+    dest=/etc/orchestrator.conf.json
+    owner=root
+    mode=0700
+
+- name: Create a new database orchestrator
+  mysql_db:
+    name: orchestrator
+    state: present
+
+- name: Start Orchestrator
+  service:
+    name=orchestrator
+    state=running
+          
+
