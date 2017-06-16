@@ -3,5 +3,6 @@
   connection: local
   roles:
   - { role: proxysql }
-  - { role: mha }
-  - { role: sysbench }
+#  - { role: mha }
+#  - { role: sysbench }
+  - { role: orchestrator }
