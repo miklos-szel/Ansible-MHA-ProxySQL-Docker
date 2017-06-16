@@ -13,6 +13,7 @@ fi
 
 server_name=damp_server_$1
 num_of_servers=$2
+replication_type=${3:-gtid}
 last_hostgroup=$(grep "hostgroup" $servers |tail -n 1 |cut -d":" -f 2 |sed 's/ //' )
 if [[ -z "$last_hostgroup" ]]
     then
@@ -23,7 +24,7 @@ if [[ -z "$last_hostgroup" ]]
 fi 
 
 
-list=$(docker ps -a |grep ${server_name})
+list=$(docker ps -a --format '{{.Names}}'|grep -E "^${server_name}[0-9]{1,2}$")
 if [[ "$list" != "" ]]
 then
     echo "Containers with name: $server_name are already running, quit!"
@@ -46,6 +47,11 @@ do
         sed   -e "s/server-id=/server-id=1/" -e "s/read_only=1/read_only=0/"  $currdir/my.cnf> $currdir/mysql_hosts/${server_name}${i}/conf.d/my.cnf
     else
         sed   -e  "s/server-id=/server-id=${i}/"  $currdir/my.cnf> $currdir/mysql_hosts/${server_name}${i}/conf.d/my.cnf
+    fi
+    if [ "$replication_type" == "gtid" ]
+    then
+	echo "gtid-mode=ON" >>$currdir/mysql_hosts/${server_name}${i}/conf.d/my.cnf
+	echo "enforce-gtid-consistency" >>$currdir/mysql_hosts/${server_name}${i}/conf.d/my.cnf
     fi
 
     cid=$(docker run --name ${server_name}${i} -d -v $currdir/mysql_hosts/${server_name}${i}/conf.d:/etc/mysql/conf.d -v $currdir/mysql_hosts/${server_name}${i}/log_mysql:/var/log/mysql  -e MYSQL_ROOT_PASSWORD=mysecretpass -d mysql:5.6)
@@ -80,8 +86,12 @@ docker exec -ti ${server_name}1  'mysql' -uroot -pmysecretpass -vvv -e "GRANT RE
 #configure replication on all hosts
 for i in $(seq 2  $num_of_servers)
 do
-
-    docker exec -ti ${server_name}${i}  'mysql' -uroot -pmysecretpass -e"change master to master_host='$master_ip',master_user='repl',master_password='slavepass',master_log_file='mysqld-bin.000004',master_log_pos=120;" -vvv
+    if [ "$replication_type" == "gtid" ]
+    then
+	docker exec -ti ${server_name}${i}  'mysql' -uroot -pmysecretpass -e"change master to master_host='$master_ip',master_user='repl',master_password='slavepass',master_auto_position = 1;" -vvv
+    else
+	docker exec -ti ${server_name}${i}  'mysql' -uroot -pmysecretpass -e"change master to master_host='$master_ip',master_user='repl',master_password='slavepass',master_log_file='mysqld-bin.000004',master_log_pos=120;" -vvv
+    fi
 
     echo "start replication"
     docker exec -ti ${server_name}${i}  'mysql' -uroot -pmysecretpass -e"START SLAVE\G" -vvv 
