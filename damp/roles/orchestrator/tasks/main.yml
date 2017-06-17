@@ -2,15 +2,23 @@
 - set_fact: 
     server_groups="{{ groups.keys()  | map('regex_search','damp.*') | select('string') | list }}"
 
-- name: install dependencies for Orchestrator
+- name: Install MySQL-server for Orchestrator
   apt: name="{{ item }}" state=present update_cache=yes cache_valid_time=3600
   with_items:
     - mysql-server-5.7
+
+- name: Add a lightweight mysqld.conf 
+  template:
+    src=mysqld.cnf.j2
+    dest=/etc/mysql/mysql.conf.d/mysqld.cnf
+    owner=root
+    mode=0775
 
 - name: Start MySQL
   service:
     name=mysql
     state=running
+    enabled=yes
           
 - name: Install Orchestrator 2.1.4
   apt: >
