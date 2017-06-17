@@ -139,16 +139,17 @@
 
 - name: proxysql | config | add server
   proxysql_backend_servers:
-    login_host:     "{{ proxysql.admin.host }}"
-    login_port:     "{{ proxysql.admin.port }}"
-    login_user:     "{{ proxysql.admin.user }}"
-    login_password: "{{ proxysql.admin.passwd }}"
-    hostname:       "{{ hostvars[item]['inventory_hostname']  }}"
-    hostgroup_id:   "{{ hostvars[item]['hostgroup'] }}"     
-    comment:        "{{ hostvars[item]['cluster'] }}"     
-    port:           "3306"
-    load_to_runtime: False 
-    state:           present
+    login_host:     	  "{{ proxysql.admin.host }}"
+    login_port:     	  "{{ proxysql.admin.port }}"
+    login_user:     	  "{{ proxysql.admin.user }}"
+    login_password: 	  "{{ proxysql.admin.passwd }}"
+    hostname:       	  "{{ hostvars[item]['inventory_hostname']  }}"
+    hostgroup_id:   	  "{{ hostvars[item]['hostgroup'] }}"     
+    max_replication_lag:  "{{ proxysql.misc.max_replication_lag }}"     
+    comment:        	  "{{ hostvars[item]['cluster'] }}"     
+    port:           	  "3306"
+    load_to_runtime: 	  False 
+    state:           	  present
   with_inventory_hostnames: all:!proxysql
   register: servers
 
