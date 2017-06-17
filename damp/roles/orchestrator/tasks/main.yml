@@ -16,6 +16,12 @@
   apt: >
     deb=https://github.com/github/orchestrator/releases/download/v2.1.4/orchestrator_2.1.4_amd64.deb
 
+- name: crate symlink to the binary
+  file:
+    src=/usr/local/orchestrator/orchestrator
+    dest=/usr/local/bin/orchestrator
+    state=link
+
 - name: Generate Orchestrator config
   template:
     src=orchestrator-sample.conf.json.j2
@@ -32,5 +38,9 @@
   service:
     name=orchestrator
     state=running
-          
-
+         
+#- wait_for: host={{ proxysql.admin.host }} port={{ proxysql.admin.port }}  delay=3 state=started
+ 
+- name: Add servers to orchestrator
+  shell: orchestrator -c discover -i {{ hostvars[item]['inventory_hostname'] }}:3306  cli
+  with_inventory_hostnames: all:!proxysql
