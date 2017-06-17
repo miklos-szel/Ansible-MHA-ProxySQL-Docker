@@ -60,7 +60,7 @@ do
             ;;
 
         "[runtime] Show servers")
-            query="SELECT hostgroup_id as hg, hostname,port,status,weight,max_connections, comment FROM runtime_mysql_servers ORDER BY hostgroup_id,hostname ASC;"
+            query="SELECT hostgroup_id as hg, hostname,port,status,weight,max_replication_lag as max_repl_lag, max_connections as max_conn, comment FROM runtime_mysql_servers ORDER BY hostgroup_id,hostname ASC;"
             exec_query "$query"
             break
             ;;
