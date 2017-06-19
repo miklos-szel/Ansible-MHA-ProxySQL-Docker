@@ -54,7 +54,7 @@ do
 	echo "enforce-gtid-consistency" >>$currdir/mysql_hosts/${server_name}${i}/conf.d/my.cnf
     fi
 
-    cid=$(docker run --name ${server_name}${i} -d -v $currdir/mysql_hosts/${server_name}${i}/conf.d:/etc/mysql/conf.d -v $currdir/mysql_hosts/${server_name}${i}/log_mysql:/var/log/mysql  -e MYSQL_ROOT_PASSWORD=mysecretpass -d mysql:5.6)
+    cid=$(docker run --name ${server_name}${i} -h ${server_name}${i}  -d -v $currdir/mysql_hosts/${server_name}${i}/conf.d:/etc/mysql/conf.d -v $currdir/mysql_hosts/${server_name}${i}/log_mysql:/var/log/mysql  -e MYSQL_ROOT_PASSWORD=mysecretpass -d mysql:5.6)
 
     server_ip=$( docker-ip $cid )
     echo "${server_name}${i} $cid($server_ip)"
