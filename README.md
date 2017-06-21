@@ -4,24 +4,6 @@ Teaching them to play together
 
 **Now with Orchestrator!**
 
-Orchestrator made part of the setup.
-Since both Orchestrator and MHA run with auto deadmaster failover disabled by default they can be tested independently.
-
-The playbook adds all MySQL clusters to the Orchestrator automagically:
-Once the playbook is done point your browser to 
-http://localhost:3000
-
-![img](http://i.imgur.com/qLcK6CA.png)
-![img](http://i.imgur.com/wVZBZfE.png)
-
-Change this to true to enable automatic dead master failover with Orchestrator:
-groups_vars/all
-```
-orchestrator:
-    auto_failover: false
-``` 
-
-
 The big picture:
 ![img](http://i.imgur.com/5DXvem4.png)
 
@@ -398,6 +380,27 @@ Run the following to reset the env and restart the test from scratch
 ```
 ./dump_reset.sh
 ```
+
+## Orchestrator
+
+Orchestrator made part of the setup.
+Since both Orchestrator and MHA run with auto deadmaster failover disabled by default they can be tested independently.
+
+The playbook adds all MySQL clusters to the Orchestrator automagically:
+
+Once the playbook is done point your browser to 
+http://localhost:3000
+
+![img](http://i.imgur.com/qLcK6CA.png)
+![img](http://i.imgur.com/wVZBZfE.png)
+
+Change this to true to enable automatic dead master failover with Orchestrator:
+groups_vars/all
+```
+orchestrator:
+    auto_failover: false
+``` 
+
 
 notes:
 - the /etc/proxysql.cnf is configured via a template, but be aware that the ProxySQL only read it during the first start (when it create the sqlite database) - you can read more here https://github.com/sysown/proxysql/blob/master/doc/configuration_system.md
