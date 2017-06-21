@@ -1,8 +1,8 @@
 Anisble-MHA-Orchestrator-ProxySQL-Docker
 ============================================================
 Teaching them to play together
-NEW:
-Now with Orchestrator!
+
+**Now with Orchestrator!**
 
 Orchestrator made part of the setup.
 Since both Orchestrator and MHA run with auto deadmaster failover disabled by default they can be tested independently.
@@ -10,9 +10,11 @@ Since both Orchestrator and MHA run with auto deadmaster failover disabled by de
 The playbook adds all MySQL clusters to the Orchestrator automagically:
 Once the playbook is done point your browser to 
 http://localhost:3000
-![img](http://imgur.com/a/rDUQT)
 
-Switch this to true to enable automatic dead master failover with Orchestrator:
+![img](http://i.imgur.com/qLcK6CA.png)
+![img](http://i.imgur.com/wVZBZfE.png)
+
+Change this to true to enable automatic dead master failover with Orchestrator:
 groups_vars/all
 ```
 orchestrator:
