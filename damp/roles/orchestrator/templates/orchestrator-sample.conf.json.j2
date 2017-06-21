@@ -97,7 +97,11 @@
   "RecoveryPeriodBlockSeconds": 3600,
   "RecoveryIgnoreHostnameFilters": [],
   "RecoverMasterClusterFilters": [
+{% if orchestrator.auto_failover %}
     ".*"
+{% else %}
+    "_master_pattern_"
+{% endif %}
   ],
   "RecoverIntermediateMasterClusterFilters": [
     "_intermediate_master_pattern_"

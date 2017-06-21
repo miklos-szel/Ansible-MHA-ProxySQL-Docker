@@ -45,7 +45,7 @@
 - name: Start Orchestrator
   service:
     name=orchestrator
-    state=running
+    state=restarted
          
 #- wait_for: host={{ proxysql.admin.host }} port={{ proxysql.admin.port }}  delay=3 state=started
  
