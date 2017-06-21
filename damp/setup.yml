@@ -5,3 +5,4 @@
   - { role: proxysql }
   - { role: mha }
   - { role: sysbench }
+  - { role: orchestrator }

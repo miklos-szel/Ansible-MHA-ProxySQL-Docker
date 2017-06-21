@@ -27,9 +27,12 @@ proxysql:
     mysql-monitor_read_only_timeout: 600
     mysql-monitor_ping_timeout: 600
     mysql-max_connections: 1024
-
+  misc:
+    max_replication_lag: 3
 mysql:
     login_user: root
     login_passwd: mysecretpass
     repl_user: repl
     repl_passwd: slavepass
+orchestrator:
+    auto_failover: false   
