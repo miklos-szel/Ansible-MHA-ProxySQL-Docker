@@ -1,12 +1,30 @@
-Anisble-MHA-ProxySQL-Docker[DAMP]
+Anisble-MHA-Orchestrator-ProxySQL-Docker
 ============================================================
 Teaching them to play together
+NEW:
+Now with Orchestrator!
+
+Orchestrator made part of the setup.
+Since both Orchestrator and MHA run with auto deadmaster failover disabled by default they can be tested independently.
+
+The playbook adds all MySQL clusters to the Orchestrator automagically:
+Once the playbook is done point your browser to 
+http://localhost:3000
+![img](http://imgur.com/a/rDUQT)
+
+Switch this to true to enable automatic dead master failover with Orchestrator:
+groups_vars/all
+```
+orchestrator:
+    auto_failover: false
+``` 
+
 
 The big picture:
 ![img](http://i.imgur.com/5DXvem4.png)
 
 
-Prezentation about [DAMP](http://www.slideshare.net/MiklosSzel/painless-mysql-ha-scalability-and-flexibility-with-ansible-mha-and-proxysql)
+Presentation about [DAMP](http://www.slideshare.net/MiklosSzel/painless-mysql-ha-scalability-and-flexibility-with-ansible-mha-and-proxysql)
 
 
 
@@ -28,14 +46,14 @@ docker build -t damp .
 ````
 
 ## Create some MySQL test clusters
-cluster of 3 machines (1 master -> 2 slaves)
+cluster of 3 machines (1 master -> 2 slaves) - GTID based replication
 ```
 ./damp_create_cluster.sh zaphod 3
 ```
 
-cluster of 2 machines (1 master -> 1 slaves)
+cluster of 2 machines (1 master -> 1 slaves) - Regular replication
 ```
-./damp_create_cluster.sh arthurdent 2
+./damp_create_cluster.sh arthurdent 2 regular
 ```
 The script generates the damp/hostfile Ansible inventory file.
 ```
@@ -398,4 +416,5 @@ Thanks
 - Dave Turner
 - Derek Downey 
 - Frédéric 'lefred' Descamps 
+- Shlomi Noach
 
