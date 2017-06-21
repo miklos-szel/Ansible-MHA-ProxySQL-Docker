@@ -5,7 +5,7 @@ Teaching them to play together
 **Now with Orchestrator!**
 
 The big picture:
-![img](http://i.imgur.com/5DXvem4.png)
+![img](http://i.imgur.com/sOKx0YL.png)
 
 
 Presentation about [DAMP](http://www.slideshare.net/MiklosSzel/painless-mysql-ha-scalability-and-flexibility-with-ansible-mha-and-proxysql)
