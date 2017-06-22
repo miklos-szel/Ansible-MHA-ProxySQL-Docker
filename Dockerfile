@@ -18,5 +18,5 @@ RUN apt-get install -y ansible
 
 ENV PATH $PATH:/root/
 WORKDIR /root
-CMD cd build/damp/ ; ansible-playbook -vvv -i hostfile setup.yml --limit localhost ; /bin/bash
+CMD cd build/damp/ ; ansible-playbook -i hostfile setup.yml --limit localhost ; /bin/bash
 
