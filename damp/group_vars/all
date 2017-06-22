@@ -1,5 +1,12 @@
+roles_enabled:
+    proxysql: true
+    mha: true
+    sysbench: true
+    orchestrator:  true
+
 proxysql_version: 1.3.3
 proxysql_filename: proxysql_{{ proxysql_version }}-ubuntu14_amd64.deb
+
 
 proxysql:
   admin:

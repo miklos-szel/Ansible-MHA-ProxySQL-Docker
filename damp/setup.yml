@@ -2,7 +2,7 @@
 - hosts: proxysql
   connection: local
   roles:
-  - { role: proxysql }
-  - { role: mha }
-  - { role: sysbench }
-  - { role: orchestrator }
+  - { role: proxysql,     when: roles_enabled.proxysql }
+  - { role: mha,          when: roles_enabled.mha }
+  - { role: sysbench,     when: roles_enabled.sysbench }
+  - { role: orchestrator, when: roles_enabled.orchestrator }

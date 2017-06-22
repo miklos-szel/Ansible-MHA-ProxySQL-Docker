@@ -324,9 +324,14 @@ ProxySQL detected the changes and reassigned the servers to the proper replicati
 
 ----
 
-####Edit the global configuration file if you want to change defaults, credentials.
+####Edit the global configuration file if you want to change defaults, credentials, roles
 damp/group_vars/all
 the mysql sections shouldn't be modified 
+roles_enabled:
+    proxysql: true
+    mha: true
+    sysbench: true
+    orchestrator:  true
 ```
 proxysql:
   admin:
