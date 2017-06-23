@@ -26,7 +26,7 @@
 
 - service: >
     name=proxysql
-    state=running
+    state=started
     enabled=yes
 
 - wait_for: host={{ proxysql.admin.host }} port={{ proxysql.admin.port }}  delay=3 state=started 

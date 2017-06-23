@@ -17,7 +17,7 @@
 - name: Start MySQL
   service:
     name=mysql
-    state=running
+    state=started
     enabled=yes
           
 - name: Install Orchestrator 2.1.4
