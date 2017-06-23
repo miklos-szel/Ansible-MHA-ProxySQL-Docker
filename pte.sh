@@ -1,4 +1,18 @@
 #!/bin/bash
+
+##########################
+red='\033[0;31m'
+green='\033[0;32m'
+yellow='\033[0;33m'
+nc='\033[0m' # No Color
+container_prefix="damp_"
+container_proxysql="damp_proxysql"
+currdir=`pwd`
+servers="$currdir/damp/hostfile"
+playbook_config="damp/group_vars/all"
+debug=0
+pte_log="$currdir/pte.log"
+
 usage()
 {
 	echo -ne "${yellow}$1${nc}\n"
@@ -10,21 +24,6 @@ usage()
     echo "$0 -c run"
     exit 1
 }
-
-numargs=$#
-if [ $numargs -lt 2 ]; then
-	usage
-fi
-red='\033[0;31m'
-green='\033[0;32m'
-yellow='\033[0;33m'
-nc='\033[0m' # No Color
-container_prefix="damp_"
-container_proxysql="damp_proxysql"
-currdir=`pwd`
-servers="$currdir/damp/hostfile"
-debug=0
-pte_log="$currdir/pte.log"
 
 create()
 {
@@ -149,9 +148,9 @@ reset()
 	if [[ "$list" != "" ]]
 	then
 	echo "Stopping and removing the following containers:"
-	docker ps -a |grep ${container_prefix}
-		docker ps -a |grep ${container_prefix}|awk '{print $1 }'|xargs docker stop
-		docker ps -a |grep ${container_prefix}|awk '{print $1 }'|xargs docker rm -f
+		docker ps -a --format '{{.Names}}'|grep ${container_prefix}
+		docker ps -a |grep ${container_prefix}|awk '{print $1 }'|xargs docker stop 2>&1>>$pte_log
+		docker ps -a |grep ${container_prefix}|awk '{print $1 }'|xargs docker rm -f 2>&1>>$pte_log
 		[ -d $currdir/mysql_hosts/ ] && rm -rf $currdir/mysql_hosts/
 	else
 	echo "No $container_prefix containers are running"
@@ -175,7 +174,8 @@ run()
 		docker stop  ${container_proxysql}
 		docker rm -v ${container_proxysql}
 	fi
-	docker run -p 3000:3000  -p 6032:6032 -p 6033:6033 -v `pwd`:/root/build --name ${container_proxysql} -it mszel42/ansible-mha-proxysql-docker
+	docker run -p 3000:3000 -h proxysql_admin  -p 6032:6032 -p 6033:6033 -v `pwd`:/root/build --name ${container_proxysql} -t damp 
+	#docker run -p 3000:3000  -p 6032:6032 -p 6033:6033 -v `pwd`:/root/build --name ${container_proxysql} -it mszel42/ansible-mha-proxysql-docker
 	echo "Done" 
 }
 
@@ -188,6 +188,74 @@ proxysql_menu()
 {
 docker exec -it ${container_proxysql}  bash -c 'cd /root/build/damp/;/usr/local/bin/proxysql_menu.sh '
 }
+
+
+create_cluster()
+{
+
+type="gtid"
+while [[ -z $name || -z $size || -z $type || $size -lt 2  ]]
+do
+
+    VALUES=$(dialog --ok-label "Submit" \
+              --backtitle "Create MySQL cluster" \
+              --output-separator ,  \
+              --title "Create MySQL Clusters" \
+              --form "Please fill the form below! $error"  15 50 0 \
+          "Name:" 1 1 "$name"         1 14 20 18 \
+          "Size:" 2 1 "$size"        2 14 2 1 \
+          "gtid/regular" 3 1 "$type"       3 14 12 8 \
+    3>&1 1>&2 2>&3)
+    error="\nERROR: ALL FIELDS ARE MANDATORY AND SIZE MUST BE >1!"
+
+    name=$(echo $VALUES |cut -d , -f 1)
+    size=$(echo $VALUES |cut -d , -f 2)
+    type=$(echo $VALUES |cut -d , -f 3)
+done
+create $name $size $type
+}
+#############START
+
+numargs=$#
+if [ $numargs -lt 2 ]; then
+
+	if [ $(which dialog|wc -l) -eq 0 ]
+	then
+		usage 
+	fi 
+
+	menuitem=$(dialog --clear  --help-button --backtitle "Proxysql Test Environment" \
+	--title "[ M A I N - M E N U ]" \
+	--menu "You can use the UP/DOWN arrow keys, the first \n\
+	letter of the choice as a hot key, or the \n\
+	number keys 1-9 to choose an option.\n\
+	Choose the TASK" 18 55 9 \
+	reset    "Reset environment" \
+	create  "Create MySQL cluster" \
+	list	"List MySQL containers" \
+	edit_config     "Edit global config" \
+	run     "Run the Ansible playbook" \
+	proxysql_menu "Run the menu driven test script" \
+	enter_container "Login into the ProxySQL/HA container" \
+	Exit "Exit to the shell" \
+	3>&1 1>&2 2>&3)
+
+	echo $menuitem
+
+	case $menuitem in
+		reset) reset ;;
+		edit_config) dialog --editbox $playbook_config  60 70 2>${playbook_config}_new && mv ${playbook_config} ${playbook_config}_old && mv ${playbook_config}_new ${playbook_config} ;;
+		create) create_cluster ;;
+		list) dialog --backtitle "Proxysql Test Environment" --title "MySQL containers" --clear --msgbox "$(docker ps -a --format '{{.Names}}'|grep ${container_prefix} | grep -v ${container_proxysql} | sort -n|sed -e 's/\(.*[^1]$\)/+->\1/g')" 20 60  ;;
+		run) run && docker logs damp_proxysql;;
+		enter_container) enter_container ;;
+		proxysql_menu) proxysql_menu ;;
+		Exit) echo "Bye"; exit 0 ;;
+	esac
+	exec $0
+fi
+
+
 
 OPTIND=1
 while getopts "c:n:s:t:"  OPT; do
@@ -213,7 +281,11 @@ while getopts "c:n:s:t:"  OPT; do
     s) 
 		if [ "${cmd}" == "create" ]
         then
-                size=$OPTARG
+			if [ $OPTARG -lt 2 ] 
+			then
+				usage "-s cluster size can't be less than 2" 
+			fi 
+            size=$OPTARG
         else
                 echo "-s size should be defined only when creating clusters (-c create) "
                 exit 1
@@ -246,3 +318,4 @@ fi
 
 echo "$cmd $name $size $type"
 $cmd $name $size $type
+#$0
