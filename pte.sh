@@ -174,8 +174,7 @@ run()
 		docker stop  ${container_proxysql}
 		docker rm -v ${container_proxysql}
 	fi
-	docker run -p 3000:3000 -h proxysql_admin  -p 6032:6032 -p 6033:6033 -v `pwd`:/root/build --name ${container_proxysql} -t damp 
-	#docker run -p 3000:3000  -p 6032:6032 -p 6033:6033 -v `pwd`:/root/build --name ${container_proxysql} -it mszel42/ansible-mha-proxysql-docker
+	docker run -p 3000:3000  -p 6032:6032 -p 6033:6033 -v `pwd`:/root/build --name ${container_proxysql} -t mszel42/ansible-mha-proxysql-docker
 	echo "Done" 
 }
 
