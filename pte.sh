@@ -1,6 +1,7 @@
 #!/bin/bash
 
 ##########################
+#set -e 
 red='\033[0;31m'
 green='\033[0;32m'
 yellow='\033[0;33m'
@@ -12,6 +13,7 @@ servers="$currdir/damp/hostfile"
 playbook_config="damp/group_vars/all"
 debug=0
 pte_log="$currdir/pte.log"
+use_dialog=$(which dialog|wc -l) 
 
 usage()
 {
@@ -22,8 +24,31 @@ usage()
     echo "$0 -c create -n zaphod -s 3"
     echo "$0 -c create -n arthur -s 2 -t regular"
     echo "$0 -c run"
+	echo "install dialog (apt-get install dialog or yum install dialog) to have a UI"
     exit 1
 }
+function dprint()
+{
+if [ $use_dialog -eq 0 ]
+	then
+		echo -ne "$1" 
+    else
+    	dialog --title "Message" --clear --msgbox "$1" 20 51
+    fi
+
+}
+
+function mytest {
+    $@ 2>>${pte_log}
+    local status=$?
+    if [ $status -ne 0 ]
+	then 
+			dprint "Command: $@:\n\nError: $(tail -n 1 ${pte_log})\n\nExit code: $status\n" 
+			exit 1
+    fi
+    return $status
+}
+
 
 create()
 {
@@ -138,53 +163,73 @@ create()
 	done
 	echo -e "\n[${server_name}:vars]\ncluster=${server_name}\nhostgroup=$hostgroup\n" >>$servers
 
-	echo -ne "\nCluster ${green}${server_name}${nc} is ready!\n"
+	dprint "Cluster ${server_name} is ready!\n"
 }
 
 reset()
 {
-	
-	list=$(docker ps -a |grep ${container_prefix})
-	if [[ "$list" != "" ]]
+	list=$(docker ps -a --format '{{.Names}}'|grep ${container_prefix})
+	if [ "$list" != "" ]
 	then
-	echo "Stopping and removing the following containers:"
-		docker ps -a --format '{{.Names}}'|grep ${container_prefix}
-		docker ps -a |grep ${container_prefix}|awk '{print $1 }'|xargs docker stop 2>&1>>$pte_log
-		docker ps -a |grep ${container_prefix}|awk '{print $1 }'|xargs docker rm -f 2>&1>>$pte_log
+	dprint "Stopping and removing the following containers:\n$list"
+		mytest docker ps -a |grep ${container_prefix}|awk '{print $1 }'|xargs docker stop 
+		mytest docker ps -a |grep ${container_prefix}|awk '{print $1 }'|xargs docker rm -f 
 		[ -d $currdir/mysql_hosts/ ] && rm -rf $currdir/mysql_hosts/
+	dprint "Stopped and removed the following containers:\n$list" 
 	else
-	echo "No $container_prefix containers are running"
+	dprint "No $container_prefix containers are running"
 	fi
 	rm -f $servers
-
+	
 }
 
 run()
 {
 	if [ ! -f $servers ] 
 	then
-		echo -ne "${red}Error${nc}:No inventory file $servers exists, create some servers first with -c create\n"
-		exit 1
+		
+		echo -ne "${red}Error${nc}: No cluster(s) is running OR no inventory file $servers exists.
+Name:\t\t zaphod
+instances:\t 1 master - 2 slaves
+replication:\t GTID
+Do you want to create one with the parameters above? (NO/yes)"
+		read confirm
+        if [ "$confirm" != "yes" ]
+        then
+                echo "You didn't type 'yes', quit!"
+				exit 1
+		else 
+			$0 -c create -n zaphod -s 3         
+		fi
 	fi
 
 	list=$(docker ps -a |grep "${container_proxysql}")
 	if [[ "$list" != "" ]]
 	then
-		echo "Stopping and removing the existing ${container_proxysql} container"
-		docker stop  ${container_proxysql}
-		docker rm -v ${container_proxysql}
+		dprint "Stopping and removing the existing ${green}${container_proxysql}${nc} container"
+		mytest docker stop  ${container_proxysql}
+		mytest docker rm -v ${container_proxysql} 
+		echo -ne "${green}Done${nc}\n"
 	fi
-	docker run -p 3000:3000  -p 6032:6032 -p 6033:6033 -v `pwd`:/root/build --name ${container_proxysql} -t mszel42/ansible-mha-proxysql-docker
-	echo "Done" 
+	echo -ne "\nStarting ${green}${container_proxysql}${nc}"	
+	mytest docker run -h ${container_proxysql} -p 3000:3000  -p 6032:6032 -p 6033:6033 -v `pwd`:/root/build --name ${container_proxysql} -t mszel42/ansible-mha-proxysql-docker
+	dprint "Done\n"
+	sleep 3
 }
 
 enter_container()
 {
-docker exec -it ${container_proxysql}  bash -c 'cd /root/build/damp/;/bin/bash '
+    if [ $(docker ps -a |grep -c "${container_proxysql}") -eq 0 ]
+    then
+        dprint "The ${container_proxysql} isn't running, Run it first!"
+    else 
+		docker exec -it ${container_proxysql}  bash -c 'cd /root/build/damp/;/bin/bash '
+	fi
 }
 
 proxysql_menu()
 {
+
 docker exec -it ${container_proxysql}  bash -c 'cd /root/build/damp/;/usr/local/bin/proxysql_menu.sh '
 }
 
@@ -218,37 +263,35 @@ create $name $size $type
 numargs=$#
 if [ $numargs -lt 2 ]; then
 
-	if [ $(which dialog|wc -l) -eq 0 ]
+	if [ $use_dialog -eq 0 ]
 	then
 		usage 
 	fi 
 
-	menuitem=$(dialog --clear  --help-button --backtitle "Proxysql Test Environment" \
+	menuitem=$(dialog --clear  --backtitle "Proxysql Test Environment" \
 	--title "[ M A I N - M E N U ]" \
 	--menu "You can use the UP/DOWN arrow keys, the first \n\
 	letter of the choice as a hot key, or the \n\
 	number keys 1-9 to choose an option.\n\
 	Choose the TASK" 18 55 9 \
-	reset    "Reset environment" \
-	create  "Create MySQL cluster" \
-	list	"List MySQL containers" \
-	edit_config     "Edit global config" \
-	run     "Run the Ansible playbook" \
-	proxysql_menu "Run the menu driven test script" \
-	enter_container "Login into the ProxySQL/HA container" \
+	List	"List MySQL containers" \
+	Create  "Create MySQL cluster" \
+	Run     "Run the Ansible playbook" \
+	Menu	"Run the menu driven test script" \
+	Login   "Login into the ProxySQL/HA container" \
+	Reset   "Reset environment" \
+	Edit    "Edit global config" \
 	Exit "Exit to the shell" \
 	3>&1 1>&2 2>&3)
 
-	echo $menuitem
-
 	case $menuitem in
-		reset) reset ;;
-		edit_config) dialog --editbox $playbook_config  60 70 2>${playbook_config}_new && mv ${playbook_config} ${playbook_config}_old && mv ${playbook_config}_new ${playbook_config} ;;
-		create) create_cluster ;;
-		list) dialog --backtitle "Proxysql Test Environment" --title "MySQL containers" --clear --msgbox "$(docker ps -a --format '{{.Names}}'|grep ${container_prefix} | grep -v ${container_proxysql} | sort -n|sed -e 's/\(.*[^1]$\)/+->\1/g')" 20 60  ;;
-		run) run && docker logs damp_proxysql;;
-		enter_container) enter_container ;;
-		proxysql_menu) proxysql_menu ;;
+		Reset) reset ;;
+		Edit) dialog --editbox $playbook_config  60 70 2>${playbook_config}_new && mv ${playbook_config} ${playbook_config}_old && mv ${playbook_config}_new ${playbook_config} ;;
+		Create) create_cluster ;;
+		List) dialog --backtitle "Proxysql Test Environment" --title "MySQL containers" --clear --msgbox "$(docker ps -a --format '{{.Names}}'|grep ${container_prefix} | grep -v ${container_proxysql} | sort -n|sed -e 's/\(.*[^1]$\)/+->\1/g')" 20 60  ;;
+		Run) run && docker logs damp_proxysql;;
+		Login) enter_container ;;
+		Menu) proxysql_menu ;;
 		Exit) echo "Bye"; exit 0 ;;
 	esac
 	exec $0
@@ -315,6 +358,4 @@ then
 	fi
 fi
 
-echo "$cmd $name $size $type"
 $cmd $name $size $type
-#$0
