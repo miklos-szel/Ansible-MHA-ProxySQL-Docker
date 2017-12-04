@@ -5,7 +5,10 @@
   apt_repository: repo="deb http://repo.percona.com/apt {{ lsb_release }} main"
 
 - name: Add signing key for Percona repo
-  apt_key: keyserver=keys.gnupg.net id=9334A25F8507EFA5 state=present
+  apt_key:
+    id: 8507EFA5
+    url: "https://percona.com/downloads/deb-percona-keyring.gpg"
+    keyring: /etc/apt/trusted.gpg.d/debian.gpg
 
 - name: Install ProxySQL package and prerequisites 
   apt:
