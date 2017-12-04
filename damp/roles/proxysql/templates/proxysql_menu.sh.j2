@@ -65,7 +65,7 @@ do
             break
             ;;
         "[runtime] Show users")
-            query="SELECT username,password,default_hostgroup as hg, active,max_connections FROM runtime_mysql_users;"
+            query="SELECT username,password,default_hostgroup as hg, active,max_connections,transaction_persistent as tx_persistent,backend,frontend FROM runtime_mysql_users;"
             exec_query "$query"
             break
             ;;

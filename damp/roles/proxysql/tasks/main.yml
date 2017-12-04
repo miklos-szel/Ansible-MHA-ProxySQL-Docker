@@ -73,16 +73,17 @@
 
 - name: proxysql | config | add ProxySQL app users
   proxysql_mysql_users:
-    login_host:         "{{ proxysql.admin.host }}"
-    login_port:         "{{ proxysql.admin.port }}"
-    login_user:         "{{ proxysql.admin.user }}"
-    login_password:     "{{ proxysql.admin.passwd }}"
-    username:           "app{{ hostvars[item]['hostgroup'] }}"
-    password:           "app{{ hostvars[item]['hostgroup'] }}"
-    max_connections:    "{{ proxysql.app.max_conn }}"
-    default_hostgroup:  "{{ hostvars[item]['hostgroup'] }}"
-    state: present
-    load_to_runtime:    True
+    login_host:             "{{ proxysql.admin.host }}"
+    login_port:             "{{ proxysql.admin.port }}"
+    login_user:             "{{ proxysql.admin.user }}"
+    login_password:         "{{ proxysql.admin.passwd }}"
+    username:               "app{{ hostvars[item]['hostgroup'] }}"
+    password:               "app{{ hostvars[item]['hostgroup'] }}"
+    max_connections:        "{{ proxysql.app.max_conn }}"
+    default_hostgroup:      "{{ hostvars[item]['hostgroup'] }}"
+    transaction_persistent: "{{ proxysql.app.transaction_persistent }}"
+    state:                  present
+    load_to_runtime:        True
   when: hostvars[item]['mysql_role']  == "master"
   with_inventory_hostnames: all:!proxysql
 
