@@ -206,7 +206,7 @@ Do you want to create one with the parameters above? (NO/yes)"
 	list=$(docker ps -a |grep "${container_proxysql}")
 	if [[ "$list" != "" ]]
 	then
-		dprint "Stopping and removing the existing ${green}${container_proxysql}${nc} container"
+		dprint "Stopping and removing the existing ${container_proxysql} container"
 		mytest docker stop  ${container_proxysql}
 		mytest docker rm -v ${container_proxysql} 
 		echo -ne "${green}Done${nc}\n"
@@ -260,6 +260,23 @@ create $name $size $type
 }
 #############START
 
+get_list()
+{
+
+servers=$(docker ps -a --format '{{.Names}}'|grep ${container_prefix} | grep -v ${container_proxysql} | sort -n)
+for server in $servers
+do 
+    server_formatted=$(echo $server| sed -e 's/\(.*[^1]$\)/+->\1/g');
+    ip=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' $server)
+    msg+="$server_formatted($ip)\n"
+
+done
+
+dialog --backtitle "ProxySQL Test Environment" --title "MySQL containers" --clear --msgbox "$msg" 20 60  
+
+}
+
+
 numargs=$#
 if [ $numargs -lt 2 ]; then
 
@@ -288,7 +305,7 @@ if [ $numargs -lt 2 ]; then
 		Reset) reset ;;
 		Edit) dialog --editbox $playbook_config  60 70 2>${playbook_config}_new && mv ${playbook_config} ${playbook_config}_old && mv ${playbook_config}_new ${playbook_config} ;;
 		Create) create_cluster ;;
-		List) dialog --backtitle "Proxysql Test Environment" --title "MySQL containers" --clear --msgbox "$(docker ps -a --format '{{.Names}}'|grep ${container_prefix} | grep -v ${container_proxysql} | sort -n|sed -e 's/\(.*[^1]$\)/+->\1/g')" 20 60  ;;
+		List) get_list;;
 		Run) run && docker logs damp_proxysql;;
 		Login) enter_container ;;
 		Menu) proxysql_menu ;;
