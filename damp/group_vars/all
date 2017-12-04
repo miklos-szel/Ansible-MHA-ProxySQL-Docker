@@ -23,6 +23,7 @@ proxysql:
     priv: '*.*:CREATE,DELETE,DROP,EXECUTE,INSERT,SELECT,UPDATE,INDEX'
     host: '%'
     max_conn: 200 
+    transaction_persistent: false 
   monitor:
     user: monitor
     passwd: monitor

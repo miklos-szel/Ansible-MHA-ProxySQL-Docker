@@ -84,6 +84,7 @@
     password:           "app{{ hostvars[item]['hostgroup'] }}"
     max_connections:    "{{ proxysql.app.max_conn }}"
     default_hostgroup:  "{{ hostvars[item]['hostgroup'] }}"
+    transaction_persistent: "{{ proxysql.app.transaction_persistent }}"
     state: present
     load_to_runtime:    True
   when: hostvars[item]['mysql_role']  == "master"
