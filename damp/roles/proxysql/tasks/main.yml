@@ -193,3 +193,21 @@
     owner=root
     group=root
     mode=0755
+
+- name: download pip
+  get_url:
+    url: https://bootstrap.pypa.io/get-pip.py
+    dest: /tmp/get-pip.py
+
+- name: install pip
+  command: "python /tmp/get-pip.py"
+
+- name: install python dependencies for proxytop
+  pip:
+    name: "npyscreen"
+
+- name: download and install proxytop
+  get_url:
+    url: https://raw.githubusercontent.com/sysown/proxytop/master/proxytop
+    dest: /usr/bin/proxytop
+    mode: 0775
