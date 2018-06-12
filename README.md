@@ -1,4 +1,4 @@
-Anisble-MHA-Orchestrator-ProxySQL-Docker
+Ansible-MHA-Orchestrator-ProxySQL-Docker
 ============================================================
 Teaching them to play together
 
